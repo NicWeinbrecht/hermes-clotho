@@ -1,0 +1,8 @@
+;; Instrument for Apply: everything is allowed except network connections that leave this machine.
+;; localhost (the HTTP sink, the SMTP sink, the proxy trap) and unix sockets stay open.
+;; Every denied attempt is logged to the unified log with the TAG message, so the runner can count them.
+(version 1)
+(allow default)
+(deny network-outbound (with message (param "TAG")))
+(allow network-outbound (remote ip "localhost:*"))
+(allow network-outbound (remote unix-socket))

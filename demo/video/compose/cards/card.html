@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>card</title>
+<style>
+  /* Fonts load under renamed families from ./fonts (render_cards.sh copies them in). If a file is missing,
+     the text falls back to a serif, which is easy to spot, instead of silently using an installed copy. */
+  @font-face { font-family: "CardOutfit"; src: url("fonts/Outfit-wght.ttf") format("truetype"); font-weight: 100 900; }
+  @font-face { font-family: "CardGrotesk"; src: url("fonts/SpaceGrotesk-wght.ttf") format("truetype"); font-weight: 300 700; }
+  @font-face { font-family: "CardMono"; src: url("fonts/DankMono-Regular.otf") format("opentype"); }
+  :root {
+    --ink: #121212;          /* 60%: backgrounds */
+    --paper: #EDE8DF;        /* 30%: text on dark, light surfaces */
+    --vermilion: #E2462F;    /* the one red, on dark surfaces */
+    --sealing-wax: #A8231E;  /* the same red, on paper */
+    --scrim: rgba(18, 18, 18, 0.82);
+  }
+  html, body { margin: 0; background: transparent; }
+  .canvas { position: relative; overflow: hidden; }
+  .c1920 { width: 1920px; height: 1080px; }
+  .c1350 { width: 1080px; height: 1350px; }
+  .creadme { width: 1280px; height: 640px; }
+  .cwordmark { width: 1600px; height: 421px; }
+  .ink { background: var(--ink); }
+  .paper { background: var(--paper); }
+
+  /* caption: Outfit 400, tracking -5%, Paper on an 82% Ink scrim; no red in captions */
+  .caption { position: absolute; left: 50%; transform: translateX(-50%); font-family: "CardOutfit", "Times New Roman", serif;
+    font-weight: 400; letter-spacing: -0.05em; color: var(--paper); background: var(--scrim); border-radius: 14px; }
+  .c1920 .caption { bottom: 120px; font-size: 64px; line-height: 1.15; padding: 14px 36px 18px; max-width: 1600px; white-space: nowrap; }
+  .c1350 .caption { bottom: 200px; font-size: 52px; line-height: 1.15; padding: 12px 28px 16px; width: max-content; max-width: 952px; text-align: center; }
+  .caption b { font-weight: 500; }
+
+  /* section title: Space Grotesk 500, tracking -4%, Paper on Ink */
+  .title { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--ink); }
+  .title h1 { margin: 0; font-family: "CardGrotesk", "Times New Roman", serif; font-weight: 500; letter-spacing: -0.04em; color: var(--paper); text-align: center; line-height: 1.05; }
+  .c1920 .title h1 { font-size: 132px; max-width: 1728px; }
+  .c1350 .title h1 { font-size: 96px; max-width: 952px; }
+
+  /* wordmark: "clotho." lowercase, Space Grotesk 500, tracking -4%; dot Vermilion on dark, Sealing Wax on light */
+  .wm { font-family: "CardGrotesk", "Times New Roman", serif; font-weight: 500; letter-spacing: -0.04em; line-height: 1; white-space: nowrap; }
+  .on-dark .wm { color: var(--paper); } .on-dark .wm i { color: var(--vermilion); }
+  .on-light .wm { color: var(--ink); } .on-light .wm i { color: var(--sealing-wax); }
+  .wm i { font-style: normal; }
+
+  /* end card */
+  .end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--ink); color: var(--paper); text-align: center; }
+  .end .tag { font-family: "CardOutfit", serif; font-weight: 400; letter-spacing: -0.03em; }
+  .end .cta { font-family: "CardMono", "Times New Roman", serif; background: var(--vermilion); color: var(--ink); border-radius: 10px; white-space: nowrap; }
+  .end .repo, .end .nous { font-family: "CardOutfit", serif; font-weight: 400; letter-spacing: -0.02em; }
+  .c1920 .end .wm { font-size: 220px; }
+  .c1920 .end .tag { font-size: 64px; margin-top: 28px; }
+  .c1920 .end .cta { font-size: 46px; padding: 22px 36px; margin-top: 72px; }
+  .c1920 .end .repo { font-size: 48px; margin-top: 36px; }
+  .c1920 .end .nous { font-size: 44px; margin-top: 14px; }
+  .c1350 .end { padding-bottom: 60px; box-sizing: border-box; }
+  .c1350 .end .wm { font-size: 200px; }
+  .c1350 .end .tag { font-size: 56px; margin-top: 28px; max-width: 900px; line-height: 1.15; }
+  .c1350 .end .cta { font-size: 27px; padding: 20px 24px; margin-top: 80px; }
+  .c1350 .end .repo { font-size: 38px; margin-top: 36px; }
+  .c1350 .end .nous { font-size: 34px; margin-top: 12px; }
+
+  /* README header: light surface (Paper), Sealing Wax red; the kept thread is the only other red */
+  .readme { position: absolute; inset: 0; background: var(--paper); color: var(--ink); }
+  .readme .wm { position: absolute; left: 96px; top: 168px; font-size: 168px; }
+  .readme .tag { position: absolute; left: 100px; top: 384px; font-family: "CardOutfit", serif; font-weight: 400; font-size: 44px; letter-spacing: -0.03em; }
+  .readme svg { position: absolute; right: 0; top: 0; }
+  .cwordmark .wm { position: absolute; left: 40px; top: 40px; font-size: 400px; }
+  /* multi-line captions: a newline in the text (%0A in the query) breaks the line */
+  .caption { white-space: pre-line; text-align: center; }
+  .c1920 .caption { white-space: pre; }
+
+  /* outline: a 2 px Paper box drawn over a real terminal line (beat B1); x, y, w, h in canvas pixels */
+  .outline { position: absolute; border: 2px solid var(--paper); border-radius: 6px; box-sizing: border-box; }
+
+  /* title over the opener's held frame (B2) and the close over its last frame (B9): transparent, lower third */
+  .over { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; color: var(--paper); text-align: center; }
+  .over.shade { background: linear-gradient(to bottom, rgba(18,18,18,0) 0%, rgba(18,18,18,.78) 38%, rgba(18,18,18,.9) 100%); }
+  .over .tag { font-family: "CardOutfit", serif; font-weight: 400; letter-spacing: -0.03em; }
+  .over .cta { font-family: "CardMono", "Times New Roman", serif; background: var(--vermilion); color: var(--ink); border-radius: 10px; white-space: nowrap; }
+  .over .repo { font-family: "CardOutfit", serif; font-weight: 400; letter-spacing: -0.02em; }
+  .over .nous { font-family: "CardOutfit", serif; font-weight: 400; letter-spacing: -0.02em; opacity: .7; }
+  .c1920 .over.ovtitle { padding: 0 0 150px; } .c1920 .over.ovtitle .wm { font-size: 160px; } .c1920 .over.ovtitle .tag { font-size: 48px; margin-top: 18px; }
+  .c1350 .over.ovtitle { padding: 0 0 210px; } .c1350 .over.ovtitle .wm { font-size: 120px; } .c1350 .over.ovtitle .tag { font-size: 44px; margin-top: 14px; }
+  .c1920 .over.ovclose { padding: 300px 0 64px; } .c1920 .over.ovclose .wm { font-size: 112px; } .c1920 .over.ovclose .tag { font-size: 48px; margin-top: 12px; }
+  .c1920 .over.ovclose .cta { font-size: 44px; padding: 18px 32px; margin-top: 40px; } .c1920 .over.ovclose .repo { font-size: 44px; margin-top: 28px; } .c1920 .over.ovclose .nous { font-size: 40px; margin-top: 10px; }
+  .c1350 .over.ovclose { padding: 380px 0 90px; } .c1350 .over.ovclose .wm { font-size: 96px; } .c1350 .over.ovclose .tag { font-size: 44px; margin-top: 10px; }
+  .c1350 .over.ovclose .cta { font-size: 28px; padding: 18px 24px; margin-top: 40px; } .c1350 .over.ovclose .repo { font-size: 38px; margin-top: 28px; } .c1350 .over.ovclose .nous { font-size: 34px; margin-top: 10px; }
+
+  /* evidence card (numbers-card.md): Ink canvas, four stat tiles, one number in Vermilion */
+  .num { position: absolute; inset: 0; color: var(--paper); font-family: "CardOutfit", serif; }
+  .num .ttl { position: absolute; font-weight: 400; letter-spacing: -0.02em; }
+  .num .tile { position: absolute; border: 1px solid rgba(237,232,223,.14); box-sizing: border-box; border-radius: 12px; }
+  .num .n { font-weight: 500; letter-spacing: -0.02em; line-height: 1; white-space: nowrap; }
+  .num .n.key { color: var(--vermilion); }
+  .num .l { position: absolute; left: 0; right: 0; bottom: 0; padding: inherit; padding-top: 0; font-weight: 400; letter-spacing: -0.02em; color: rgba(237,232,223,.66); line-height: 1.15; white-space: pre-line; }
+  /* proof lines under the tiles (numbers-card.md, "Proof lines"): set lines, items split by a dimmed dot */
+  .num .proof { position: absolute; font-weight: 400; letter-spacing: -0.02em; color: var(--paper); line-height: 1.3; }
+  .num .proof div { white-space: nowrap; } .num .proof .sep { color: rgba(237,232,223,.45); }
+  .num .proof code { font-family: "CardMono", "Times New Roman", serif; font-size: .92em; letter-spacing: 0; }
+  .c1920 .num .ttl { left: 120px; top: 110px; font-size: 56px; }
+  .c1920 .num .tile { top: 236px; width: 390px; height: 360px; padding: 44px 36px; }
+  .c1920 .num .n { font-size: 160px; } .c1920 .num .l { font-size: 48px; }
+  .c1920 .num .proof { left: 120px; top: 622px; width: 1680px; font-size: 48px; }
+  .c1350 .num .ttl { left: 64px; top: 56px; font-size: 52px; width: 952px; line-height: 1.15; }
+  .c1350 .num .tile { width: 460px; height: 300px; padding: 30px 32px; }
+  .c1350 .num .n { font-size: 132px; } .c1350 .num .l { font-size: 44px; }
+  .c1350 .num .proof { left: 64px; top: 808px; width: 952px; font-size: 34px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  // ?kind=caption|title|end|readme|wordmark  &canvas=1920|1350  &text=...  &surface=dark|light (wordmark)  &cta=... &repo=...
+  const q = new URLSearchParams(location.search);
+  const kind = q.get('kind') || 'caption';
+  const canvas = kind === 'readme' ? 'creadme' : kind === 'wordmark' ? 'cwordmark' : (q.get('canvas') === '1350' ? 'c1350' : 'c1920');
+  const el = document.createElement('div');
+  el.className = 'canvas ' + canvas;
+  const wordmark = () => { const w = document.createElement('div'); w.className = 'wm'; w.textContent = 'clotho'; const d = document.createElement('i'); d.textContent = '.'; w.appendChild(d); return w; };
+  const div = (cls, text) => { const d = document.createElement('div'); d.className = cls; d.textContent = text; return d; };
+  if (kind === 'caption') {
+    // **word** marks a word set in weight 500 (still Paper)
+    const c = div('caption', ''); (q.get('text') || 'Caption text').split(/(\*\*[^*]+\*\*)/).forEach(part => {
+      if (part.startsWith('**')) { const b = document.createElement('b'); b.textContent = part.slice(2, -2); c.appendChild(b); }
+      else c.appendChild(document.createTextNode(part)); });
+    el.appendChild(c);
+  } else if (kind === 'title') {
+    const t = div('title', ''); const h = document.createElement('h1'); h.textContent = q.get('text') || 'Title'; t.appendChild(h); el.appendChild(t);
+  } else if (kind === 'end') {
+    const e = div('end on-dark', ''); e.appendChild(wordmark());
+    e.appendChild(div('tag', q.get('text') || 'Spin every future. Keep one.'));
+    e.appendChild(div('cta', q.get('cta') || 'hermes plugins install NicWeinbrecht/hermes-clotho --enable'));
+    e.appendChild(div('repo', q.get('repo') || 'github.com/NicWeinbrecht/hermes-clotho'));
+    e.appendChild(div('nous', q.get('nous') || 'A Hermes Agent plugin · @NousResearch'));
+    el.appendChild(e);
+  } else if (kind === 'readme') {
+    const r = div('readme on-light', ''); r.appendChild(wordmark()); r.appendChild(div('tag', q.get('text') || 'Spin every future. Keep one.'));
+    // one thread spun from the left edge splits into three; two fade to grey, the kept one stays red
+    r.insertAdjacentHTML('beforeend', `<svg width="560" height="640" viewBox="0 0 560 640" fill="none" stroke-linecap="round">
+      <defs><linearGradient id="spun" gradientUnits="userSpaceOnUse" x1="0" x2="260" y1="0" y2="0"><stop offset="0" stop-color="#121212" stop-opacity="0"/><stop offset=".6" stop-color="#121212"/></linearGradient></defs>
+      <path d="M0 330 C 140 330, 200 330, 260 330" stroke="url(#spun)" stroke-width="5"/>
+      <path d="M260 330 C 360 330, 400 180, 560 160" stroke="#121212" stroke-opacity=".28" stroke-width="4"/>
+      <path d="M260 330 C 360 330, 400 470, 560 500" stroke="#121212" stroke-opacity=".28" stroke-width="4"/>
+      <path d="M260 330 C 360 330, 420 330, 560 330" stroke="#A8231E" stroke-width="5"/></svg>`);
+    el.appendChild(r);
+  } else if (kind === 'outline') {
+    const o = div('outline', ''); ['x','y','w','h'].forEach(k => { if (!q.get(k)) throw new Error('outline needs ' + k); });
+    o.style.left = q.get('x') + 'px'; o.style.top = q.get('y') + 'px'; o.style.width = q.get('w') + 'px'; o.style.height = q.get('h') + 'px';
+    el.appendChild(o);
+  } else if (kind === 'titleover' || kind === 'close') {
+    const o = div('over ' + (kind === 'titleover' ? 'ovtitle' : 'ovclose shade'), ''); o.classList.add('on-dark');
+    const box = div('on-dark', ''); box.style.display = 'contents'; o.appendChild(wordmark());
+    o.appendChild(div('tag', q.get('text') || 'Spin every future. Keep one.'));
+    if (kind === 'close') {
+      o.appendChild(div('cta', q.get('cta') || 'hermes plugins install NicWeinbrecht/hermes-clotho --enable'));  // the README's install line
+      o.appendChild(div('repo', q.get('repo') || 'github.com/NicWeinbrecht/hermes-clotho'));
+      o.appendChild(div('nous', q.get('nous') || 'for the Hermes Agent · @NousResearch'));
+    }
+    el.appendChild(o);
+  } else if (kind === 'numbers') {
+    // part=base (title + proof line), t1..t4 (one tile), all (everything): tiles fade up one by one in the edit
+    const part = q.get('part') || 'all';
+    const n = div('num', ''); const wide = canvas === 'c1920';
+    if (part === 'base' || part === 'all') {
+      n.appendChild(div('ttl', 'Measured: 72 task runs, 11 tasks'));
+      // numbers-card.md, "Proof lines": the proof points that are not already a tile, in set lines per layout
+      const P = ['Fails closed', 'The shell actually runs, in a sandbox', 'Drift stopped Apply 14/14',
+                 'Forks compares full effect ledgers across models', 'Try it: <code>hermes clotho demo</code>'];
+      const pr = div('proof', '');
+      (wide ? [[0, 1, 2], [3, 4]] : [[0, 1], [3], [2, 4]]).forEach(line => {
+        const ln = document.createElement('div');
+        ln.innerHTML = line.map(i => P[i]).join('<span class="sep"> \u00b7 </span>'); pr.appendChild(ln); });
+      n.appendChild(pr);
+    }
+    const tiles = [['0', 'escaped effects', false], ['72/72', 'applied exactly', false], ['0', 'model calls in Apply', true], ['1.5\u2009s', 'Apply time,\n33-run median', false]];
+    tiles.forEach((t, i) => {
+      if (part !== 'all' && part !== 't' + (i + 1)) return;
+      const tile = div('tile', '');
+      if (wide) { tile.style.left = (120 + i * 430) + 'px'; }
+      else { tile.style.left = (64 + (i % 2) * 492) + 'px'; tile.style.top = (152 + Math.floor(i / 2) * 332) + 'px'; }
+      const num = div('n' + (t[2] ? ' key' : ''), t[0]); tile.appendChild(num); tile.appendChild(div('l', t[1])); n.appendChild(tile);
+    });
+    el.appendChild(n);
+  } else if (kind === 'wordmark') {
+    const s = div(q.get('surface') === 'light' ? 'on-light' : 'on-dark', ''); s.appendChild(wordmark()); el.appendChild(s);
+  }
+  if (q.get('bg') === 'ink') el.classList.add('ink');
+  if (q.get('bg') === 'paper') el.classList.add('paper');
+  document.getElementById('root').appendChild(el);
+  document.fonts.ready.then(() => {
+    // a stat number wider than its tile is set smaller until it fits (numbers-card.md: "72/72" may not fit)
+    document.querySelectorAll('.num .n').forEach(n => {
+      let px = parseFloat(getComputedStyle(n).fontSize);
+      while (n.scrollWidth > n.clientWidth && px > 80) { px -= 2; n.style.fontSize = px + 'px'; }
+      n.setAttribute('data-px', px);
+    });
+    document.body.setAttribute('data-num-px', [...document.querySelectorAll('.num .n')].map(n => n.textContent + '=' + n.getAttribute('data-px')).join(';'));
+    // caption: the rendered text box, for the legibility measurement (cap height and width in canvas pixels)
+    const cap = document.querySelector('.caption');
+    if (cap) { const r = cap.getBoundingClientRect(); document.body.setAttribute('data-caption-box', [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)].join(',')); }
+    const st = [...document.fonts].map(f => f.family + ':' + f.status).join(',');
+    document.body.setAttribute('data-fonts', st);
+  });
+</script>
+</body>
+</html>

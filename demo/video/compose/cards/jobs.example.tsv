@@ -1,0 +1,10 @@
+# name	width	height	query for card.html (tab-separated; spaces in the text are fine)
+caption_1920	1920	1080	kind=caption&canvas=1920&text=Three futures. **Keep** one.
+caption_1350	1080	1350	kind=caption&canvas=1350&text=Three futures. **Keep** one.
+title_1920	1920	1080	kind=title&canvas=1920&text=Spin every future.
+title_1350	1080	1350	kind=title&canvas=1350&text=Spin every future.
+end_1920	1920	1080	kind=end&canvas=1920
+end_1350	1080	1350	kind=end&canvas=1350
+readme_header	1280	640	kind=readme
+wordmark_dark	1600	421	kind=wordmark&surface=dark
+wordmark_light	1600	421	kind=wordmark&surface=light

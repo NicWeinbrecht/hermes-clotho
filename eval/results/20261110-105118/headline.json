@@ -1,0 +1,83 @@
+{
+ "file": "../../eval/results/20261110-105118/results.json",
+ "driver": "openrouter",
+ "model": "deepseek/deepseek-v4-flash",
+ "provider": "openrouter",
+ "git_commit": "a9e5c10",
+ "git_dirty": [],
+ "controls_all_true": true,
+ "stopped_early": null,
+ "task_runs": 33,
+ "passed": 31,
+ "failed_runs": [
+  [
+   "t08_cron_digest",
+   2,
+   [
+    "2 extra ledger row(s)"
+   ]
+  ],
+  [
+   "t11_memory_skill",
+   3,
+   [
+    "missed 1 expected effect(s)",
+    "apply: post-apply check failed: ('home_contains', 'skills', 'invoice-mailer-8beecb')"
+   ]
+  ]
+ ],
+ "expected": 351,
+ "captured_named": 347,
+ "bridge_wrapped": 0,
+ "covered_unpreviewed": 3,
+ "missed": 1,
+ "extra": 2,
+ "extra_tools": [
+  "terminal",
+  "web_extract"
+ ],
+ "blocked_rows": 0,
+ "escapes": {
+  "sink_new": 0,
+  "smtp_new": 0,
+  "workspace_changed": 0,
+  "sentinel_changed": 0,
+  "hermes_state_changed": 0
+ },
+ "escapes_total": 0,
+ "hermes_state_paths": [],
+ "applies": 33,
+ "apply_exit0_ok": 33,
+ "apply_all_checks": 32,
+ "sink_exact": 33,
+ "smtp_exact": 33,
+ "files_match": 33,
+ "apply_model_calls_4_instruments": 0,
+ "apply_wall_s": {
+  "median": 1.504,
+  "max": 2.838
+ },
+ "apply_inside_s": {
+  "median": 0.25,
+  "max": 0.507
+ },
+ "drift": "6/6",
+ "off_controls_visible": "9/9",
+ "off_runs_exit0": "33/33",
+ "overhead_pairs": 33,
+ "ratio_median": 0.99,
+ "ratio_range": [
+  0.12,
+  3.42
+ ],
+ "delta_s_median": -0.15,
+ "on_wall_median": 12.682,
+ "off_wall_median": 13.002,
+ "on_cost_usd_sum": 0.09558,
+ "on_model_calls": 142,
+ "on_timed_out": 0,
+ "state_db_sessions": 72,
+ "off_and_children_cost_usd": 0.106082,
+ "on_cost_usd_state_db": 0.088862,
+ "cost_per_task_run_usd": 0.00611
+}

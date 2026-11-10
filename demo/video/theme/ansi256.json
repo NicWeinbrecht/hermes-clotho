@@ -1,0 +1,227 @@
+{
+  "Ink": {
+    "hex": "#121212",
+    "chosen": 233,
+    "chosen_hex": "#121212",
+    "why": "exact match",
+    "chosen_contrast_on_233": 1.0,
+    "nearest": [
+      {
+        "code": 233,
+        "hex": "#121212",
+        "dE2000": 0.0,
+        "pure_hue_red": false
+      },
+      {
+        "code": 232,
+        "hex": "#080808",
+        "dE2000": 1.94,
+        "pure_hue_red": false
+      },
+      {
+        "code": 234,
+        "hex": "#1C1C1C",
+        "dE2000": 2.95,
+        "pure_hue_red": false
+      },
+      {
+        "code": 16,
+        "hex": "#000000",
+        "dE2000": 3.2,
+        "pure_hue_red": false
+      },
+      {
+        "code": 235,
+        "hex": "#262626",
+        "dE2000": 6.09,
+        "pure_hue_red": false
+      },
+      {
+        "code": 236,
+        "hex": "#303030",
+        "dE2000": 9.26,
+        "pure_hue_red": false
+      }
+    ]
+  },
+  "Paper": {
+    "hex": "#EDE8DF",
+    "chosen": 254,
+    "chosen_hex": "#E4E4E4",
+    "why": "nearest (255 is 0.05 dE further)",
+    "chosen_contrast_on_233": 14.73,
+    "nearest": [
+      {
+        "code": 254,
+        "hex": "#E4E4E4",
+        "dE2000": 4.58,
+        "pure_hue_red": false
+      },
+      {
+        "code": 255,
+        "hex": "#EEEEEE",
+        "dE2000": 4.63,
+        "pure_hue_red": false
+      },
+      {
+        "code": 253,
+        "hex": "#DADADA",
+        "dE2000": 5.5,
+        "pure_hue_red": false
+      },
+      {
+        "code": 188,
+        "hex": "#D7D7D7",
+        "dE2000": 5.93,
+        "pure_hue_red": false
+      },
+      {
+        "code": 231,
+        "hex": "#FFFFFF",
+        "dE2000": 6.45,
+        "pure_hue_red": false
+      },
+      {
+        "code": 252,
+        "hex": "#D0D0D0",
+        "dE2000": 7.12,
+        "pure_hue_red": false
+      }
+    ]
+  },
+  "Vermilion": {
+    "hex": "#E2462F",
+    "chosen": 167,
+    "chosen_hex": "#D75F5F",
+    "why": "nearest code that is not a pure-hue red: 196 and 160 are nearer but are the saturated digital reds the palette rules out",
+    "chosen_contrast_on_233": 5.08,
+    "nearest": [
+      {
+        "code": 196,
+        "hex": "#FF0000",
+        "dE2000": 5.83,
+        "pure_hue_red": true
+      },
+      {
+        "code": 160,
+        "hex": "#D70000",
+        "dE2000": 8.55,
+        "pure_hue_red": true
+      },
+      {
+        "code": 167,
+        "hex": "#D75F5F",
+        "dE2000": 10.06,
+        "pure_hue_red": false
+      },
+      {
+        "code": 203,
+        "hex": "#FF5F5F",
+        "dE2000": 11.06,
+        "pure_hue_red": false
+      },
+      {
+        "code": 202,
+        "hex": "#FF5F00",
+        "dE2000": 12.66,
+        "pure_hue_red": false
+      },
+      {
+        "code": 166,
+        "hex": "#D75F00",
+        "dE2000": 12.97,
+        "pure_hue_red": false
+      }
+    ]
+  },
+  "Sealing Wax": {
+    "hex": "#A8231E",
+    "chosen": 131,
+    "chosen_hex": "#AF5F5F",
+    "why": "not used in terminals (light surfaces only); nearest non-pure code, for completeness",
+    "chosen_contrast_on_233": 4.13,
+    "nearest": [
+      {
+        "code": 124,
+        "hex": "#AF0000",
+        "dE2000": 4.75,
+        "pure_hue_red": true
+      },
+      {
+        "code": 88,
+        "hex": "#870000",
+        "dE2000": 8.25,
+        "pure_hue_red": true
+      },
+      {
+        "code": 160,
+        "hex": "#D70000",
+        "dE2000": 9.79,
+        "pure_hue_red": true
+      },
+      {
+        "code": 52,
+        "hex": "#5F0000",
+        "dE2000": 15.43,
+        "pure_hue_red": false
+      },
+      {
+        "code": 131,
+        "hex": "#AF5F5F",
+        "dE2000": 15.69,
+        "pure_hue_red": false
+      },
+      {
+        "code": 196,
+        "hex": "#FF0000",
+        "dE2000": 17.76,
+        "pure_hue_red": true
+      }
+    ]
+  },
+  "dim (Paper 50% over Ink)": {
+    "hex": "#807D78",
+    "chosen": 244,
+    "chosen_hex": "#808080",
+    "why": "nearest",
+    "chosen_contrast_on_233": 4.74,
+    "nearest": [
+      {
+        "code": 244,
+        "hex": "#808080",
+        "dE2000": 3.11,
+        "pure_hue_red": false
+      },
+      {
+        "code": 243,
+        "hex": "#767676",
+        "dE2000": 4.1,
+        "pure_hue_red": false
+      },
+      {
+        "code": 102,
+        "hex": "#878787",
+        "dE2000": 4.66,
+        "pure_hue_red": false
+      },
+      {
+        "code": 245,
+        "hex": "#8A8A8A",
+        "dE2000": 5.53,
+        "pure_hue_red": false
+      },
+      {
+        "code": 242,
+        "hex": "#6C6C6C",
+        "dE2000": 7.47,
+        "pure_hue_red": false
+      },
+      {
+        "code": 246,
+        "hex": "#949494",
+        "dE2000": 8.61,
+        "pure_hue_red": false
+      }
+    ]
+  }
+}

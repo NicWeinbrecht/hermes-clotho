@@ -1,0 +1,12 @@
+# local scratch: test homes, sinks, logs, notes (contain copies of .env)
+.run/
+.clotho-runs/
+trash/
+scratch/
+tmp/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.env.*
+clotho-tests/

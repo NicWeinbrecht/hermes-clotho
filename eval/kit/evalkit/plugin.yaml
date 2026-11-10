@@ -1,0 +1,8 @@
+name: evalkit
+version: 0.0.1
+description: "Evaluation-only tools with real local effects: a chat post, an email and a wiki push, all to local sinks."
+author: NicWeinbrecht
+provides_tools:
+  - evalkit_chat_post
+  - evalkit_send_email
+  - mcp__evalnotes__push

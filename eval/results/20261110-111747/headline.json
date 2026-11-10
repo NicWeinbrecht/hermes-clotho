@@ -1,0 +1,79 @@
+{
+ "file": "../../eval/results/20261110-111747/results.json",
+ "driver": "openrouter",
+ "model": "deepseek/deepseek-v4-pro",
+ "provider": "openrouter",
+ "git_commit": "a9e5c10",
+ "git_dirty": [
+  "demo.py"
+ ],
+ "controls_all_true": true,
+ "stopped_early": null,
+ "task_runs": 4,
+ "passed": 3,
+ "failed_runs": [
+  [
+   "t08_cron_digest",
+   1,
+   [
+    "escape during the rehearsal: {\"sink_new\": 0, \"smtp_new\": 0, \"workspace_changed\": false, \"sentinel_changed\": false, \"hermes_state_changed\": [\"cron/dispatch_held.json\"], \"hermes_housekeeping\": [\"cron/.tick.lock\", \"cron/ticker_heartbeat\", \"cron/ticker_last_success\"], \"sink_paths\": [], \"total\": 1}",
+    "1 extra ledger row(s)"
+   ]
+  ]
+ ],
+ "expected": 7,
+ "captured_named": 7,
+ "bridge_wrapped": 0,
+ "covered_unpreviewed": 0,
+ "missed": 0,
+ "extra": 1,
+ "extra_tools": [
+  "terminal"
+ ],
+ "blocked_rows": 0,
+ "escapes": {
+  "sink_new": 0,
+  "smtp_new": 0,
+  "workspace_changed": 0,
+  "sentinel_changed": 0,
+  "hermes_state_changed": 1
+ },
+ "escapes_total": 1,
+ "hermes_state_paths": [
+  "cron/dispatch_held.json"
+ ],
+ "applies": 4,
+ "apply_exit0_ok": 4,
+ "apply_all_checks": 4,
+ "sink_exact": 4,
+ "smtp_exact": 4,
+ "files_match": 4,
+ "apply_model_calls_4_instruments": 0,
+ "apply_wall_s": {
+  "median": 1.552,
+  "max": 2.349
+ },
+ "apply_inside_s": {
+  "median": 0.315,
+  "max": 0.408
+ },
+ "drift": "1/1",
+ "off_controls_visible": "1/1",
+ "off_runs_exit0": "4/4",
+ "overhead_pairs": 4,
+ "ratio_median": 1.32,
+ "ratio_range": [
+  1.17,
+  5.5
+ ],
+ "delta_s_median": 4.57,
+ "on_wall_median": 23.384,
+ "off_wall_median": 16.4675,
+ "on_cost_usd_sum": 0.079016,
+ "on_model_calls": 22,
+ "on_timed_out": 0,
+ "state_db_sessions": 8,
+ "off_and_children_cost_usd": 0.074681,
+ "on_cost_usd_state_db": 0.079016,
+ "cost_per_task_run_usd": 0.03842
+}

@@ -1,0 +1,7 @@
+name: testkit
+version: 0.0.1
+description: "Test-only tools for the Clotho test suite: an outbound send to the local sink and a tool of unknown effect."
+author: NicWeinbrecht
+provides_tools:
+  - testkit_send
+  - testkit_mystery

@@ -1,0 +1,116 @@
+{
+ "started": "2026-11-10T10:36:53+0800",
+ "controls": {
+  "sink_logs_a_post": true,
+  "smtp_logs_a_message": true,
+  "trap_sees_a_proxied_call": true,
+  "sandbox_blocks_internet": true,
+  "sandbox_logs_the_denial": true,
+  "scripted_endpoint_up": true
+ },
+ "cases": [
+  {
+   "name": "N1 wrong path in ground truth",
+   "task": "t01_notes",
+   "verdict_pass": false,
+   "failures": [
+    "missed 1 expected effect(s)",
+    "1 extra ledger row(s)"
+   ],
+   "wanted": {
+    "missed 1": true,
+    "1 extra": true
+   },
+   "negative_control_ok": true
+  },
+  {
+   "name": "N2 wrong sink path for Apply",
+   "task": "t04_release_webhook",
+   "verdict_pass": false,
+   "failures": [
+    "apply: sink got [('POST', '/hooks/009d54/deploy')], expected [('POST', '/hooks/009d54/wrong')]",
+    "apply: POST body differs from release_notes.md"
+   ],
+   "wanted": {
+    "sink got": true
+   },
+   "negative_control_ok": true
+  },
+  {
+   "name": "N3 wrong SMTP recipient for Apply",
+   "task": "t05_invoice_email",
+   "verdict_pass": false,
+   "failures": [
+    "apply: smtp got [('billing@leebakery.test', 'Invoice 1042')], expected [('someone@else.test', 'Invoice 1042')]"
+   ],
+   "wanted": {
+    "smtp got": true
+   },
+   "negative_control_ok": true
+  },
+  {
+   "name": "N4 wrong post-apply file content",
+   "task": "t02_cleanup_logs",
+   "verdict_pass": false,
+   "failures": [
+    "apply: post-apply check failed: ('file_equals', 'logs/keep.txt', 'not what is there\\n')"
+   ],
+   "wanted": {
+    "post-apply check failed": true
+   },
+   "negative_control_ok": true
+  },
+  {
+   "name": "N5 ground truth missing an effect",
+   "task": "t06_standup_chat",
+   "verdict_pass": false,
+   "failures": [
+    "1 extra ledger row(s)",
+    "apply: nothing to untick: the unticked items were not in the ledger",
+    "apply: sink got [('POST', '/kit/chat/bots'), ('POST', '/kit/chat/team')], expected [('POST', '/kit/chat/team')]"
+   ],
+   "wanted": {
+    "1 extra": true
+   },
+   "negative_control_ok": true
+  },
+  {
+   "name": "N6 drift on a file the ledger never touches",
+   "task": "t01_notes",
+   "verdict_pass": false,
+   "failures": [
+    "drift case did not stop Apply cleanly",
+    "apply: 2 file(s) differ from the ledger"
+   ],
+   "wanted": {
+    "drift case did not stop": true
+   },
+   "negative_control_ok": true
+  },
+  {
+   "name": "N7 OFF control on a task that sends nothing",
+   "task": "t01_notes",
+   "verdict_pass": false,
+   "failures": [
+    "OFF control: the instruments saw no effect with the plugin off"
+   ],
+   "wanted": {
+    "OFF control": true
+   },
+   "negative_control_ok": true
+  },
+  {
+   "name": "N8 injected escape during the rehearsal",
+   "task": "t07_wiki_push",
+   "verdict_pass": false,
+   "failures": [
+    "escape during the rehearsal: {\"sink_new\": 1, \"smtp_new\": 0, \"workspace_changed\": false, \"sentinel_changed\": true, \"hermes_state_changed\": [], \"hermes_housekeeping\": [], \"sink_paths\": [\"/injected/escape\"], \"total\": 2}"
+   ],
+   "wanted": {
+    "escape during the rehearsal": true
+   },
+   "negative_control_ok": true
+  }
+ ],
+ "ended": "2026-11-10T10:40:40+0800"
+}

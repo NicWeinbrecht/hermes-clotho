@@ -1,0 +1,77 @@
+name: clotho
+version: 0.1.0
+manifest_version: 2
+api_version: 1
+description: >-
+  Spin every future. Keep one. Rehearse any Hermes task, see every effect it would have, untick what you
+  don't want, then apply.
+  Apply replays exactly the effects you kept, with no model calls.
+  Disclosure — during a rehearsal, read-only tools run for real (file reads, file search, skills, session
+  search, web_search, clarify, todo, delegate_task in `hermes clotho run`), so a web search reaches its
+  search provider for real and may be metered; page fetches (web_extract, vision_analyze and similar) are held.
+  Everything else is held: file writes go to an APFS copy-on-write clone of your workspace under
+  <HERMES_HOME>/plugin-data/clotho/; a file-tool write aimed through a symlink is resolved first and recorded at
+  the real target with a VIA SYMLINK badge, and a multi-file patch has each of its file headers mapped the same
+  way. Shell commands run inside that clone under macOS sandbox-exec with no network and no writes outside it;
+  their HOME is a copy-on-write mirror of your home, so a write there (for example a move to ~/.Trash) stays in
+  the mirror and is shown as an OUTSIDE WORKSPACE effect, ticked like other file effects, which Apply would
+  make in your real home; a write to an absolute path into your real home is blocked.
+  Messages, web requests, MCP and other plugins' tools, cron changes and memory writes are captured, never run.
+  Every effect in the report is ticked by default, messages and web requests included, except three kinds that
+  run only if you name them with --only: tools Clotho does not know, held fetches, and commands it cannot
+  preview; memory writes and other calls that need the agent loop are shown but cannot be applied in this
+  version. What cannot be rehearsed: a command that needs the network, writes outside the workspace, reads a
+  secret or starts a background process, a curl or wget call that saves to or reads from a file (an output
+  file, a config file, an upload or a form field read from a file), and execute_code whose code names a
+  network module are captured without a preview, so their effects are unknown until they run; the exception
+  is a single plain curl or wget call, which is shown as a web request (method, URL, headers, body), ticked,
+  and re-run as that exact command by apply (a body read from a file uses that file as it is at apply time).
+  Replies to captured messages and responses to captured web requests are unknown, so the agent continues as
+  if they succeeded and its final text may say things happened that did not (the effect report is the truth).
+  Hermes' background memory and skill review can run during `hermes clotho run`: it calls the model, so it
+  spends tokens, and its memory or skill writes are captured as rows labelled BACKGROUND REVIEW.
+  Forks (`hermes clotho fork`) start one model session per timeline, all at once, so a fork of N timelines
+  costs about N times one run; each timeline is capped at --max-calls model calls (default 25) and a call over
+  the cap is answered with a stop reply that never reaches the provider; at most one timeline may use the
+  Claude subscription provider (cap --max-plan-calls, default 10, plus Hermes' title call). A model named
+  without @provider is started with the provider Hermes would pick for it in your home, or OpenRouter when
+  that one has no credentials there; the aliases flash, pro and kimi are OpenRouter models. Cron mode
+  (`hermes clotho cron <job>`) runs a job's prompt as a one-shot rehearsal per run: the job's schedule,
+  history, outputs and notepad are not written and nothing is delivered; its pre-run script runs in the same
+  sandbox and a script that needs anything the sandbox stops is refused before the model is called. The demo
+  (`hermes clotho demo`) replays model turns recorded on 2026-11-10 in a throwaway home with no keys:
+  it makes no model call and opens no network connection (a guard in every process refuses anything but
+  localhost, proxies point at a local trap), and it writes only inside its temp folder. On
+  Linux and other systems, and if sandbox-exec is missing, shell commands are captured without preview;
+  captured calls still fire other plugins' post_tool_call hooks with status ok. Reads outside the workspace
+  are allowed except a deny-list of credential stores (the SSH, GnuPG, AWS, Kubernetes and Docker folders in
+  your home, the GitHub CLI login, .netrc, git credentials, the keychains, every .env file, and Hermes' own
+  .env and auth.json); the effect report contains command output and file contents, so it can include
+  whatever the rehearsed commands printed. Apply stops before any change when a file changed since the
+  rehearsal, when a folder on an effect's path has since become a symlink, or when a ticked effect
+  certainly depends on an unticked one (--force applies anyway); dependencies guessed from file contents,
+  folder listings and what the agent read are marked as guesses and only warn. Apply records each effect as
+  it goes, so applying again never re-sends what was sent; an effect cut off mid-send is held until you name
+  it. Fail closed: if the plugin errs during a rehearsal the tool call is blocked, and `hermes clotho
+  run` refuses to start the model unless its tool middleware runs ahead of every other tool middleware (so it
+  will not run alongside a plugin whose tool middleware loads earlier) and refuses a provider that can run tools outside
+  Hermes' tool path (ACP providers, and the Claude subscription provider unless it is version 0.3.4, whose
+  native tools were verified off), whether it is named with --provider, set in HERMES_INFERENCE_PROVIDER or
+  configured as the default; `/clotho on` in a live
+  session keeps its state in memory only, so a gateway restart or failed plugin reload ends the rehearsal
+  and later calls run for real. Apply runs the kept effects through Hermes' real tools in this terminal,
+  where Hermes auto-approves its own dangerous-command prompt in non-interactive use, so your tick is the
+  approval. No network calls of its own beyond the model calls of the runs you start, no telemetry, no stored
+  credentials; each rehearsed command's
+  process group is killed when it returns, and so is a child that started its own session (found by a
+  marker in its environment or by its working folder; one that clears its environment and leaves the
+  rehearsal's folders lives on, still inside the sandbox).
+author: NicWeinbrecht
+license: MIT
+requires_hermes: ">=0.23.0"
+tags: [safety, dry-run, review, automation]
+provides_hooks:
+  - pre_tool_call
+provides_middleware:
+  - tool_execution
+  - llm_execution

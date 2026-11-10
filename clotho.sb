@@ -1,0 +1,119 @@
+;; clotho.sb: Clotho shell sandbox (macOS Seatbelt / SBPL).
+;; Run:  sandbox-exec -D CLONE=<abs clone dir> -D TMP=<abs private tmp> -D HOME=<abs home> \
+;;                    -D TAG=<rehearsal id> [-D ORIG=<workspace>] [-D HOMEMIRROR=<home mirror>] \
+;;                    -f clotho.sb <cmd...>
+;; All -D paths must be canonical (realpath: /tmp is /private/tmp, /var is /private/var).
+;; SBPL evaluates rules in order and the LAST matching rule wins, so each deny comes
+;; before the narrower allow that re-opens it.
+(version 1)
+
+;; R0. Start permissive so ordinary tools (git, python, node, sed, mv, zsh) keep working:
+;; process exec/fork, mach IPC to system daemons, sysctl, reads.
+(allow default)
+
+;; R1. Network: deny everything, inbound and outbound, every address family:
+;; TCP/UDP to any host incl. 127.0.0.1/::1, binding/listening, and unix-domain sockets
+;; (this also blocks DNS, which goes through the mDNSResponder unix socket).
+;; (with message TAG) stamps the kernel's violation log line so a run can be found again.
+(deny network* (with message (param "TAG")))
+
+;; R2. Writes: deny every file write (create, write, unlink, rename, mkdir, chmod,
+;; xattr, truncate, link) anywhere...
+(deny file-write* (with message (param "TAG")))
+
+;; R3. ...then re-allow writes only inside the clone and the run's private tmp
+;; (TMPDIR / TMPPREFIX point there; it sits next to the clone, not in it, so the
+;; effect diff stays clean).
+(allow file-write*
+  (subpath (param "CLONE"))
+  (subpath (param "TMP")))
+
+;; R3a. Optional, ON when the runner passes -D HOMEMIRROR=<rehearsal's home mirror>: HOME points
+;; there, so writes such as `mv x ~/.Trash/` land in the mirror (and are reported as outside-the-
+;; workspace effects) instead of failing. The mirror's top-level folders are symlinks to the real
+;; ones: the kernel resolves them, so writes through them still hit R2. The links themselves cannot
+;; be moved, replaced or created (vnode-type SYMLINK), so a command cannot re-point the mirror.
+(if (param "HOMEMIRROR")
+  (allow file-write* (subpath (param "HOMEMIRROR"))))
+(if (param "HOMEMIRROR")
+  (deny file-write* (require-all (subpath (param "HOMEMIRROR")) (vnode-type SYMLINK))
+    (with message (param "TAG"))))
+
+;; R3b. Optional, OFF unless -D USERTMP=<getconf DARWIN_USER_TEMP_DIR> is passed:
+;; Apple's mktemp and confstr(_CS_DARWIN_USER_TEMP_DIR) users ignore TMPDIR and write
+;; to /var/folders/../T/. Default is strict: the runner puts a `mktemp` shim
+;; (adds -p "$TMPDIR") first on PATH instead. Writes here escape the clone and the
+;; ledger, so enable only if a command class needs it.
+(if (param "USERTMP")
+  (allow file-write* (subpath (param "USERTMP"))))
+
+;; R4. Character devices commands write to as a matter of course. These are not files
+;; and leave no state: /dev/null, /dev/zero, the controlling tty, inherited fds,
+;; and dtrace's helper (node and python open it at start; denial is harmless but noisy).
+(allow file-write*
+  (literal "/dev/null")
+  (literal "/dev/zero")
+  (literal "/dev/tty")
+  (literal "/dev/dtracehelper")
+  (regex #"^/dev/fd/[0-9]+$")
+  (regex #"^/dev/ttys[0-9]+$"))
+(allow file-ioctl
+  (literal "/dev/dtracehelper")
+  (literal "/dev/tty")
+  (regex #"^/dev/ttys[0-9]+$"))
+
+;; R5. Secrets: reads stay allowed in general (compilers, interpreters, git config,
+;; Homebrew prefixes all live outside the clone), but credential stores are denied.
+;; Network is already off, but a rehearsal's stdout and diffs end up in the effect
+;; report, which may be posted to a chat platform; a command that cats ~/.ssh/id_* or
+;; copies a .env into the clone would leak it there.
+(deny file-read* file-write*
+  (subpath (string-append (param "HOME") "/.ssh"))
+  (subpath (string-append (param "HOME") "/.gnupg"))
+  (subpath (string-append (param "HOME") "/.aws"))
+  (subpath (string-append (param "HOME") "/.config/gh"))
+  (subpath (string-append (param "HOME") "/.docker"))
+  (subpath (string-append (param "HOME") "/.kube"))
+  (subpath (string-append (param "HOME") "/Library/Keychains"))
+  (literal (string-append (param "HOME") "/.netrc"))
+  (literal (string-append (param "HOME") "/.git-credentials"))
+  (literal (string-append (param "HOME") "/.hermes/.env"))
+  (literal (string-append (param "HOME") "/.hermes/auth.json"))
+  (regex #"/\.env$")
+  (regex #"/\.env\.[^/]*$")
+  (with message (param "TAG")))
+
+;; R6. Effects that leave the machine-or-session without touching a file or socket:
+;; Apple Events (osascript "tell application X", the #141346 class of accident),
+;; LaunchServices (`open` a URL or app), the pasteboard, and the keychain daemon.
+(deny appleevent-send (with message (param "TAG")))
+(deny mach-lookup
+  (global-name "com.apple.coreservices.launchservicesd")
+  (global-name "com.apple.pasteboard.1")
+  (global-name "com.apple.SecurityServer")
+  (global-name "com.apple.securityd.xpc")
+  (with message (param "TAG")))
+
+;; R7. Binaries whose whole job is an effect outside the workspace that file and network
+;; rules cannot see (they hand work to launchd/cron/atrun/Apple Events/LaunchServices):
+;; refuse to exec them at all. The runner marks such commands "can't preview" up front.
+(deny process-exec
+  (literal "/usr/bin/crontab")
+  (literal "/usr/bin/at")
+  (literal "/usr/bin/batch")
+  (literal "/bin/launchctl")
+  (literal "/usr/bin/osascript")
+  (literal "/usr/bin/open")
+  (literal "/usr/bin/shortcuts")
+  (literal "/usr/bin/security")
+  (literal "/usr/sbin/systemsetup")
+  (literal "/usr/bin/defaults")
+  (with message (param "TAG")))
+
+;; R8. Optional, ON in the runner (-D ORIG=<real workspace path>): the original workspace
+;; is unreadable inside the rehearsal. Absolute paths baked into the workspace (venv
+;; shebangs, build caches, `cd /abs/workspace && ...`) would otherwise silently read the
+;; live tree instead of the clone; with this rule they fail loudly and are flagged.
+;; Requires the runs root to live outside ORIG (the runner puts it next to it).
+(if (param "ORIG")
+  (deny file-read* file-write* process-exec (subpath (param "ORIG")) (with message (param "TAG"))))

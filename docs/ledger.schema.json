@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/NicWeinbrecht/hermes-clotho/docs/ledger.schema.json",
+  "title": "Clotho effects ledger line (clotho.ledger.v1)",
+  "description": "One JSON object per line of <HERMES_HOME>/plugin-data/clotho/<rehearsal_id>/ledger.jsonl. One line = one effect the rehearsed run would have had. Lines are appended while the rehearsal runs; when it ends, depends_on/dependents are filled and the file is rewritten atomically. Readers must ignore unknown fields; writers add fields only with a schema bump.",
+  "type": "object",
+  "required": ["schema", "rehearsal_id", "id", "class", "tool", "args", "source", "summary", "irreversible",
+               "previewable", "badges", "default_selected", "preview", "apply", "depends_on", "dependents", "ts"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {"const": "clotho.ledger.v1"},
+    "rehearsal_id": {"type": "string", "pattern": "^r-[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$"},
+    "id": {"type": "integer", "minimum": 1, "description": "1-based effect number, the number shown in the report and used by --only/--except. Ledger order = original order."},
+    "class": {"enum": ["file", "command", "http", "outbound", "state", "unknown", "blocked"],
+              "description": "file: a file change (from write_file/patch, or from a sandboxed command). command: a shell command or an execute_code call; with children it is the group of its file changes, without children and previewable=false it was captured without a preview; an execute_code call that changed no files is still one row (previewable=true, apply.method none, not ticked). http: a single curl/wget request stopped at the network in the sandbox. outbound: a message/send/plugin/MCP tool call, captured; also a write_file/patch call whose target cannot be mapped into the clone or overlay (previewable=false, CAN'T PREVIEW). state: a Hermes-state tool (memory, skills, cron, kanban), captured. unknown: a tool not in the registry, captured. blocked: a call blocked by the fail-closed path, a file-tool call the tool itself refused (preview.refused_by 'tool'), or a sandbox report that arrived after its command had returned (preview.violation); never appliable."},
+    "tool": {"type": "string", "description": "Tool name the model called (the underlying name for tool_call bridge calls, single or batch form; source.bridge is then 'tool_call')."},
+    "args": {"type": "object", "description": "Arguments as the model passed them (workspace paths, not clone paths)."},
+    "source": {
+      "type": "object",
+      "required": ["call_seq"],
+      "properties": {
+        "call_seq": {"type": "integer", "description": "Sequence number of the tool call in this rehearsal (1-based)."},
+        "session_id": {"type": ["string", "null"]},
+        "task_id": {"type": ["string", "null"], "description": "Differs from the parent's for subagent calls."},
+        "tool_call_id": {"type": ["string", "null"]},
+        "turn_id": {"type": ["string", "null"]},
+        "api_request_id": {"type": ["string", "null"]},
+        "bridge": {"type": "string", "description": "Optional (added in v1): 'tool_call' when the call arrived through Hermes' Tool Search bridge; tool/args are the underlying call's."},
+        "origin": {"type": "string", "description": "Optional (added in v1): Hermes' write origin when not the task itself, e.g. 'background_review' for Hermes' background memory/skill review (the row then carries the BACKGROUND REVIEW badge)."}
+      }
+    },
+    "parent_id": {"type": ["integer", "null"], "description": "For a file change made by a sandboxed command: the id of that command's row."},
+    "children": {"type": "array", "items": {"type": "integer"}, "description": "For a command group: ids of its file changes."},
+    "summary": {"type": "string", "description": "One line for the report, e.g. 'modify notes.txt (+1 -1)'."},
+    "target": {
+      "type": ["object", "null"],
+      "description": "What the effect acts on. kind=file|link|dir: path (workspace-relative, or absolute when outside), abs_path, in_workspace. kind=command: command, cwd. kind=http: method, url, headers, body. kind=tool: name, recipients.",
+      "properties": {
+        "kind": {"enum": ["file", "link", "dir", "command", "http", "tool"]},
+        "path": {"type": "string"}, "abs_path": {"type": "string"}, "in_workspace": {"type": "boolean"},
+        "requested_path": {"type": "string", "description": "Optional (file rows with the VIA SYMLINK badge): the path as the agent named it, before symlinks were resolved."},
+        "command": {"type": ["string", "null"]}, "cwd": {"type": "string"},
+        "method": {"type": "string"}, "url": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}},
+        "body": {"type": ["string", "null"]},
+        "name": {"type": "string"}, "recipients": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "change": {"enum": ["created", "modified", "deleted", "renamed", "mode", null], "description": "File rows only."},
+    "from_path": {"type": ["string", "null"], "description": "Renamed rows: the old workspace-relative path."},
+    "vcs_internal": {"type": "boolean", "description": "A change under .git/: applied with its command as one unit, never ticked alone."},
+    "irreversible": {"type": "boolean", "description": "Leaves the machine or cannot be taken back by Clotho (sends, web writes, unknown tools, commands without a preview)."},
+    "previewable": {"type": "boolean", "description": "false = captured without a preview: its real effects are unknown until applied."},
+    "badges": {"type": "array", "items": {"enum": ["IRREVERSIBLE", "CAN'T PREVIEW", "OUTSIDE WORKSPACE", "BLOCKED", "UNKNOWN TOOL", "NETWORK", "HELD READ", "VIA SYMLINK", "BACKGROUND REVIEW"]}, "description": "BACKGROUND REVIEW (added in v1, optional): the call came from Hermes' background memory/skill review, not from the task. VIA SYMLINK (added in v1, optional): the path the agent named goes through a symlink; target.path/abs_path is where the write would really land, target.requested_path is what the agent named."},
+    "default_selected": {"type": "boolean", "description": "Ticked by default in the report and in a plain apply."},
+    "before": {"$ref": "#/$defs/fingerprint_or_null", "description": "State of the path just before THIS effect, inside the rehearsal (may be an earlier effect's after-state)."},
+    "original": {"$ref": "#/$defs/fingerprint_or_null", "description": "State of the live path when the rehearsal started. Set on the FIRST effect that touches the path; null on later ones. Apply's drift check compares the live file with it."},
+    "original_from": {"$ref": "#/$defs/fingerprint_or_null", "description": "Renamed rows: original state of from_path (first touch only)."},
+    "after": {"$ref": "#/$defs/fingerprint_or_null", "description": "State this effect leaves the path in."},
+    "blob": {"type": ["string", "null"], "description": "Path, relative to the rehearsal folder, of the after-state content Apply writes (blobs/<sha256>)."},
+    "preview": {
+      "type": "object",
+      "description": "What the report shows. file: diff (unified, null for binary or > 1 MB), lines_added, lines_removed, before_mode, after_mode; a file changed by a sandboxed command in the home mirror adds home_mirror (its path relative to the home). command: stdout, stderr, exit_code, sandbox{detection, log_reader, blocked_network, blocked_write, blocked_read, blocked_exec, blocked_ipc, survivors, swept[], timed_out, seconds, audit_events, maybe_blocked[], violations[]}, scan{flags[]}; can't-preview commands add reasons[] and partial_changes_discarded[]; execute_code rows add code (the full code, optional). http: request{method,url,headers,body}, sandbox, note. outbound/state/unknown: recipients[], text, args. blocked: error, traceback; a refused file-tool call adds refused_by ('tool') and targets[] {path, abs_path, in_workspace, requested_path, via_symlink}; a late sandbox report adds violation and command_row."
+    },
+    "apply": {
+      "type": "object",
+      "required": ["method", "appliable"],
+      "properties": {
+        "method": {"enum": ["write_blob", "unlink", "rename", "chmod", "group", "tool_call", "command", "none"]},
+        "appliable": {"type": "boolean"},
+        "reason": {"type": ["string", "null"]}
+      }
+    },
+    "depends_on": {"type": "array", "items": {"type": "integer"}, "description": "Earlier effects whose would-be output this effect used (same path; a command naming the path; an outbound effect after the agent read the path)."},
+    "dependents": {"type": "array", "items": {"type": "integer"}, "description": "Inverse of depends_on: later effects that read this effect's output."},
+    "simulated_result": {"type": ["string", "null"], "description": "The honest result string the agent got back for a captured call."},
+    "ts": {"type": "string", "description": "Local time with offset, e.g. 2026-11-10T06:41:55+0800."}
+  },
+  "$defs": {
+    "fingerprint_or_null": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "object", "required": ["exists"], "properties": {
+          "exists": {"type": "boolean"},
+          "kind": {"enum": ["file", "link", "dir"]},
+          "sha256": {"type": "string", "description": "hex sha256 of the content; 'link:<sha256 of target>' for symlinks"},
+          "size": {"type": "integer"}, "mode": {"type": "string", "description": "octal, e.g. 0o644"},
+          "mtime_ns": {"type": "integer"}, "link": {"type": "string"}
+        }}
+      ]
+    }
+  }
+}

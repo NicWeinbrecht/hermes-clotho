@@ -1,0 +1,663 @@
+{
+ "results": "/Users/you/projects/hermes-clotho/eval/results/20261110-084017/results.json",
+ "model": "deepseek/deepseek-v4-flash",
+ "provider": "openrouter",
+ "git_commit": "3f4258b",
+ "sessions_in_window": 48,
+ "on_sessions": 22,
+ "on_cost_usd_meta": 0.070316,
+ "on_cost_usd_state_db": 0.064834,
+ "other_sessions_cost_usd": 0.074481,
+ "other_sessions": 26,
+ "tasks": {
+  "t01_notes": {
+   "runs": 2,
+   "passed": 2,
+   "captured": 4,
+   "covered_unpreviewed": 0,
+   "expected": 4,
+   "missed": 0,
+   "extra": 0,
+   "extra_tools": [],
+   "bridge_wrapped": 0,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    0.95,
+    1.003
+   ],
+   "apply_seconds_inside": [
+    0.002,
+    0.002
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [
+    true,
+    true
+   ],
+   "off_hits": [
+    0,
+    0
+   ],
+   "on_wall_s": [
+    130.643,
+    8.625
+   ],
+   "off_wall_s": [
+    11.498,
+    6.459
+   ],
+   "ratio": [
+    11.36,
+    1.34
+   ],
+   "on_model_calls": [
+    3,
+    3
+   ],
+   "on_cost_usd": [
+    0.0032,
+    0.00228
+   ],
+   "failures": [
+    [],
+    []
+   ]
+  },
+  "t02_cleanup_logs": {
+   "runs": 2,
+   "passed": 2,
+   "captured": 80,
+   "covered_unpreviewed": 0,
+   "expected": 80,
+   "missed": 0,
+   "extra": 0,
+   "extra_tools": [],
+   "bridge_wrapped": 0,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    1.046,
+    0.941
+   ],
+   "apply_seconds_inside": [
+    0.01,
+    0.01
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    0,
+    0
+   ],
+   "on_wall_s": [
+    10.239,
+    9.456
+   ],
+   "off_wall_s": [
+    4.425,
+    9.415
+   ],
+   "ratio": [
+    2.31,
+    1.0
+   ],
+   "on_model_calls": [
+    3,
+    3
+   ],
+   "on_cost_usd": [
+    0.00286,
+    0.00306
+   ],
+   "failures": [
+    [],
+    []
+   ]
+  },
+  "t03_sort_photos": {
+   "runs": 2,
+   "passed": 2,
+   "captured": 120,
+   "covered_unpreviewed": 0,
+   "expected": 120,
+   "missed": 0,
+   "extra": 0,
+   "extra_tools": [],
+   "bridge_wrapped": 0,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    1.01,
+    0.976
+   ],
+   "apply_seconds_inside": [
+    0.014,
+    0.015
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    0,
+    0
+   ],
+   "on_wall_s": [
+    7.285,
+    7.302
+   ],
+   "off_wall_s": [
+    7.16,
+    8.808
+   ],
+   "ratio": [
+    1.02,
+    0.83
+   ],
+   "on_model_calls": [
+    3,
+    3
+   ],
+   "on_cost_usd": [
+    0.00198,
+    0.00286
+   ],
+   "failures": [
+    [],
+    []
+   ]
+  },
+  "t04_release_webhook": {
+   "runs": 2,
+   "passed": 2,
+   "captured": 4,
+   "covered_unpreviewed": 0,
+   "expected": 4,
+   "missed": 0,
+   "extra": 0,
+   "extra_tools": [],
+   "bridge_wrapped": 0,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    2.341,
+    2.318
+   ],
+   "apply_seconds_inside": [
+    0.373,
+    0.418
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [
+    true,
+    true
+   ],
+   "off_hits": [
+    1,
+    1
+   ],
+   "on_wall_s": [
+    13.102,
+    11.936
+   ],
+   "off_wall_s": [
+    9.659,
+    8.596
+   ],
+   "ratio": [
+    1.36,
+    1.39
+   ],
+   "on_model_calls": [
+    4,
+    4
+   ],
+   "on_cost_usd": [
+    0.00324,
+    0.00312
+   ],
+   "failures": [
+    [],
+    []
+   ]
+  },
+  "t05_invoice_email": {
+   "runs": 2,
+   "passed": 0,
+   "captured": 4,
+   "covered_unpreviewed": 0,
+   "expected": 4,
+   "missed": 0,
+   "extra": 3,
+   "extra_tools": [
+    "tool_describe",
+    "tool_search"
+   ],
+   "bridge_wrapped": 0,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    1.23,
+    1.384
+   ],
+   "apply_seconds_inside": [
+    0.219,
+    0.269
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    1,
+    1
+   ],
+   "on_wall_s": [
+    13.861,
+    15.674
+   ],
+   "off_wall_s": [
+    10.219,
+    6.324
+   ],
+   "ratio": [
+    1.36,
+    2.48
+   ],
+   "on_model_calls": [
+    4,
+    6
+   ],
+   "on_cost_usd": [
+    0.0033,
+    0.00406
+   ],
+   "failures": [
+    [
+     "1 extra ledger row(s)"
+    ],
+    [
+     "2 extra ledger row(s)"
+    ]
+   ]
+  },
+  "t06_standup_chat": {
+   "runs": 2,
+   "passed": 0,
+   "captured": 4,
+   "covered_unpreviewed": 0,
+   "expected": 4,
+   "missed": 0,
+   "extra": 3,
+   "extra_tools": [
+    "tool_describe",
+    "tool_search"
+   ],
+   "bridge_wrapped": 4,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    0.99,
+    1.046
+   ],
+   "apply_seconds_inside": [
+    0.0,
+    0.0
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    2,
+    2
+   ],
+   "on_wall_s": [
+    15.1,
+    11.002
+   ],
+   "off_wall_s": [
+    6.896,
+    6.883
+   ],
+   "ratio": [
+    2.19,
+    1.6
+   ],
+   "on_model_calls": [
+    4,
+    3
+   ],
+   "on_cost_usd": [
+    0.00236,
+    0.00295
+   ],
+   "failures": [
+    [
+     "2 extra ledger row(s)",
+     "effect #3 is recorded under the bridge name tool_call, not evalkit_chat_post",
+     "effect #4 is recorded under the bridge name tool_call, not evalkit_chat_post"
+    ],
+    [
+     "1 extra ledger row(s)",
+     "effect #2 is recorded under the bridge name tool_call, not evalkit_chat_post",
+     "effect #3 is recorded under the bridge name tool_call, not evalkit_chat_post"
+    ]
+   ]
+  },
+  "t07_wiki_push": {
+   "runs": 2,
+   "passed": 0,
+   "captured": 2,
+   "covered_unpreviewed": 0,
+   "expected": 2,
+   "missed": 0,
+   "extra": 4,
+   "extra_tools": [
+    "tool_describe",
+    "tool_search"
+   ],
+   "bridge_wrapped": 0,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    1.242,
+    1.354
+   ],
+   "apply_seconds_inside": [
+    0.257,
+    0.25
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    1,
+    1
+   ],
+   "on_wall_s": [
+    17.234,
+    16.628
+   ],
+   "off_wall_s": [
+    6.94,
+    10.677
+   ],
+   "ratio": [
+    2.48,
+    1.56
+   ],
+   "on_model_calls": [
+    4,
+    4
+   ],
+   "on_cost_usd": [
+    0.00333,
+    0.00323
+   ],
+   "failures": [
+    [
+     "2 extra ledger row(s)"
+    ],
+    [
+     "2 extra ledger row(s)"
+    ]
+   ]
+  },
+  "t08_cron_digest": {
+   "runs": 2,
+   "passed": 0,
+   "captured": 2,
+   "covered_unpreviewed": 0,
+   "expected": 2,
+   "missed": 0,
+   "extra": 3,
+   "extra_tools": [
+    "tool_describe",
+    "tool_search"
+   ],
+   "bridge_wrapped": 2,
+   "escapes": 0,
+   "apply_ok": 0,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    0.948,
+    0.937
+   ],
+   "apply_seconds_inside": [
+    0.0,
+    0.001
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    0,
+    0
+   ],
+   "on_wall_s": [
+    9.569,
+    7.72
+   ],
+   "off_wall_s": [
+    8.433,
+    7.976
+   ],
+   "ratio": [
+    1.13,
+    0.97
+   ],
+   "on_model_calls": [
+    3,
+    4
+   ],
+   "on_cost_usd": [
+    0.00284,
+    0.0023
+   ],
+   "failures": [
+    [
+     "1 extra ledger row(s)",
+     "effect #2 is recorded under the bridge name tool_call, not cronjob_manage",
+     "apply: post-apply check failed: ('home_contains', 'cron', 'weekly-digest-b66445')"
+    ],
+    [
+     "2 extra ledger row(s)",
+     "effect #3 is recorded under the bridge name tool_call, not cronjob_manage",
+     "apply: post-apply check failed: ('home_contains', 'cron', 'weekly-digest-b8c40b')"
+    ]
+   ]
+  },
+  "t09_delegate": {
+   "runs": 2,
+   "passed": 2,
+   "captured": 6,
+   "covered_unpreviewed": 0,
+   "expected": 6,
+   "missed": 0,
+   "extra": 0,
+   "extra_tools": [],
+   "bridge_wrapped": 0,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    2.467,
+    2.464
+   ],
+   "apply_seconds_inside": [
+    0.395,
+    0.36
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    1,
+    1
+   ],
+   "on_wall_s": [
+    60.669,
+    30.079
+   ],
+   "off_wall_s": [
+    319.09,
+    12.992
+   ],
+   "ratio": [
+    0.19,
+    2.32
+   ],
+   "on_model_calls": [
+    8,
+    10
+   ],
+   "on_cost_usd": [
+    0.00656,
+    0.00587
+   ],
+   "failures": [
+    [],
+    []
+   ]
+  },
+  "t10_code_report": {
+   "runs": 2,
+   "passed": 2,
+   "captured": 2,
+   "covered_unpreviewed": 2,
+   "expected": 4,
+   "missed": 0,
+   "extra": 0,
+   "extra_tools": [],
+   "bridge_wrapped": 0,
+   "escapes": 0,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    1.087,
+    1.089
+   ],
+   "apply_seconds_inside": [
+    0.001,
+    0.003
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    1,
+    1
+   ],
+   "on_wall_s": [
+    13.671,
+    14.898
+   ],
+   "off_wall_s": [
+    9.425,
+    14.974
+   ],
+   "ratio": [
+    1.45,
+    0.99
+   ],
+   "on_model_calls": [
+    3,
+    3
+   ],
+   "on_cost_usd": [
+    0.00348,
+    0.0029
+   ],
+   "failures": [
+    [],
+    []
+   ]
+  },
+  "t11_memory_skill": {
+   "runs": 2,
+   "passed": 0,
+   "captured": 4,
+   "covered_unpreviewed": 0,
+   "expected": 4,
+   "missed": 0,
+   "extra": 0,
+   "extra_tools": [],
+   "bridge_wrapped": 0,
+   "escapes": 2,
+   "apply_ok": 2,
+   "apply_status_ok": 2,
+   "apply_wall_s": [
+    1.429,
+    1.434
+   ],
+   "apply_seconds_inside": [
+    0.311,
+    0.315
+   ],
+   "apply_model_calls_all_instruments": 0,
+   "drift": [],
+   "off_hits": [
+    0,
+    0
+   ],
+   "on_wall_s": [
+    11.505,
+    17.354
+   ],
+   "off_wall_s": [
+    9.915,
+    13.175
+   ],
+   "ratio": [
+    1.16,
+    1.32
+   ],
+   "on_model_calls": [
+    3,
+    4
+   ],
+   "on_cost_usd": [
+    0.00232,
+    0.00223
+   ],
+   "failures": [
+    [
+     "escape during the rehearsal: {\"sink_new\": 0, \"smtp_new\": 0, \"workspace_changed\": false, \"sentinel_changed\": false, \"hermes_state_changed\": [\"skills/.usage.json\"], \"hermes_housekeeping\": [\"cron/.tick.lock\", \"cron/ticker_heartbeat\", \"cron/ticker_last_success\"], \"sink_paths\": [], \"total\": 1}"
+    ],
+    [
+     "escape during the rehearsal: {\"sink_new\": 0, \"smtp_new\": 0, \"workspace_changed\": false, \"sentinel_changed\": false, \"hermes_state_changed\": [\"skills/.usage.json\"], \"hermes_housekeeping\": [\"cron/.tick.lock\", \"cron/ticker_heartbeat\", \"cron/ticker_last_success\"], \"sink_paths\": [], \"total\": 1}"
+    ]
+   ]
+  }
+ },
+ "median_ratio": 1.36,
+ "median_delta_s": 3.54,
+ "ratios_sorted": [
+  0.19,
+  0.83,
+  0.97,
+  0.99,
+  1.0,
+  1.02,
+  1.13,
+  1.16,
+  1.32,
+  1.34,
+  1.36,
+  1.36,
+  1.39,
+  1.45,
+  1.56,
+  1.6,
+  2.19,
+  2.31,
+  2.32,
+  2.48,
+  2.48,
+  11.36
+ ],
+ "on_cost_per_run_usd": {
+  "mean": 0.0032,
+  "min": 0.00198,
+  "max": 0.00656
+ }
+}

@@ -1,0 +1,2599 @@
+{
+ "schema": "clotho.eval.v1",
+ "run_id": "20261110-082940",
+ "started": "2026-11-10T08:29:40+0800",
+ "ended": "2026-11-10T08:31:25+0800",
+ "driver": "scripted",
+ "model": "scripted",
+ "provider": "evalstub",
+ "git_commit": "3f4258b",
+ "git_dirty": [],
+ "plugin": {
+  "name": "clotho",
+  "version": "0.1.0"
+ },
+ "repetitions": 1,
+ "tasks_selected": [
+  "t01_notes",
+  "t02_cleanup_logs",
+  "t03_sort_photos",
+  "t04_release_webhook",
+  "t05_invoice_email",
+  "t06_standup_chat",
+  "t07_wiki_push",
+  "t08_cron_digest",
+  "t09_delegate",
+  "t10_code_report",
+  "t11_memory_skill"
+ ],
+ "off_mode": "all",
+ "ports": {
+  "sink": 19060,
+  "smtp": 19061,
+  "stub": 19062,
+  "trap": 19063
+ },
+ "work_dir": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940",
+ "controls": {
+  "sink_logs_a_post": true,
+  "smtp_logs_a_message": true,
+  "trap_sees_a_proxied_call": true,
+  "sandbox_blocks_internet": true,
+  "sandbox_logs_the_denial": true,
+  "scripted_endpoint_up": true
+ },
+ "results": [
+  {
+   "task": "t01_notes",
+   "title": "Summarise weekly notes, tick the todo",
+   "rep": 1,
+   "tag": "b41ac3",
+   "covers": [
+    "file-create",
+    "file-edit",
+    "drift-edit"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-082944-baab",
+    "wall_s": 3.983,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/001_t01_notes-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 5,
+    "tool_calls": 4,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.81,
+    "status": "finished",
+    "ledger": {
+     "expected": 2,
+     "optional_expected": 0,
+     "captured": 2,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        1
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 1,
+       "row_ids": [
+        2
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 2,
+     "leaf_rows": 2,
+     "classes": {
+      "file": 2
+     },
+     "attempted_tools": [
+      "patch",
+      "read_file",
+      "write_file"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": {
+    "kind": "edit",
+    "path": "todo.md",
+    "exit_code": 4,
+    "status": "drift",
+    "drift_paths": [
+     "todo.md"
+    ],
+    "workspace_unchanged": true,
+    "sink_new": 0,
+    "smtp_new": 0,
+    "receipt_model_calls": 0,
+    "pass": true
+   },
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1,
+     2
+    ],
+    "applied": 2,
+    "applied_ids": [
+     1,
+     2
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 0.898,
+    "seconds_inside": 0.002,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/003_t01_notes_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 2,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [
+     {
+      "check": [
+       "file_equals",
+       "todo.md",
+       "- [x] write summary\n- [ ] send update\n"
+      ],
+      "ok": true
+     }
+    ],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "ebefa5",
+    "exit_code": 0,
+    "wall_s": 4.702,
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": true,
+    "sink_paths": [],
+    "expected_sink": 0,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/004_t01_notes-r1-off",
+    "escape_visible": false,
+    "control": false
+   },
+   "overhead": {
+    "on_wall_s": 3.983,
+    "off_wall_s": 4.702,
+    "ratio": 0.85,
+    "delta_s": -0.72
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t02_cleanup_logs",
+   "title": "Delete 40 rotated log files with one rm",
+   "rep": 1,
+   "tag": "12634f",
+   "covers": [
+    "shell-rm-many",
+    "file-delete"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-082957-0cbb",
+    "wall_s": 2.764,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/005_t02_cleanup_logs-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 2,
+    "tool_calls": 1,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.64,
+    "status": "finished",
+    "ledger": {
+     "expected": 40,
+     "optional_expected": 0,
+     "captured": 40,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        2
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 1,
+       "row_ids": [
+        3
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 2,
+       "row_ids": [
+        4
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 3,
+       "row_ids": [
+        5
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 4,
+       "row_ids": [
+        6
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 5,
+       "row_ids": [
+        7
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 6,
+       "row_ids": [
+        8
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 7,
+       "row_ids": [
+        9
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 8,
+       "row_ids": [
+        10
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 9,
+       "row_ids": [
+        11
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 10,
+       "row_ids": [
+        12
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 11,
+       "row_ids": [
+        13
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 12,
+       "row_ids": [
+        14
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 13,
+       "row_ids": [
+        15
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 14,
+       "row_ids": [
+        16
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 15,
+       "row_ids": [
+        17
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 16,
+       "row_ids": [
+        18
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 17,
+       "row_ids": [
+        19
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 18,
+       "row_ids": [
+        20
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 19,
+       "row_ids": [
+        21
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 20,
+       "row_ids": [
+        22
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 21,
+       "row_ids": [
+        23
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 22,
+       "row_ids": [
+        24
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 23,
+       "row_ids": [
+        25
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 24,
+       "row_ids": [
+        26
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 25,
+       "row_ids": [
+        27
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 26,
+       "row_ids": [
+        28
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 27,
+       "row_ids": [
+        29
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 28,
+       "row_ids": [
+        30
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 29,
+       "row_ids": [
+        31
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 30,
+       "row_ids": [
+        32
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 31,
+       "row_ids": [
+        33
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 32,
+       "row_ids": [
+        34
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 33,
+       "row_ids": [
+        35
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 34,
+       "row_ids": [
+        36
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 35,
+       "row_ids": [
+        37
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 36,
+       "row_ids": [
+        38
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 37,
+       "row_ids": [
+        39
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 38,
+       "row_ids": [
+        40
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 39,
+       "row_ids": [
+        41
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 41,
+     "leaf_rows": 40,
+     "classes": {
+      "command": 1,
+      "file": 40
+     },
+     "attempted_tools": [
+      "terminal"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34,
+     35,
+     36,
+     37,
+     38,
+     39,
+     40,
+     41
+    ],
+    "applied": 40,
+    "applied_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34,
+     35,
+     36,
+     37,
+     38,
+     39,
+     40,
+     41
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 1.054,
+    "seconds_inside": 0.014,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/006_t02_cleanup_logs_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 40,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [
+     {
+      "check": [
+       "file_equals",
+       "logs/keep.txt",
+       "keep me\n"
+      ],
+      "ok": true
+     }
+    ],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "2a375a",
+    "exit_code": 0,
+    "wall_s": 1.112,
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": true,
+    "sink_paths": [],
+    "expected_sink": 0,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/007_t02_cleanup_logs-r1-off",
+    "escape_visible": false,
+    "control": false
+   },
+   "overhead": {
+    "on_wall_s": 2.764,
+    "off_wall_s": 1.112,
+    "ratio": 2.49,
+    "delta_s": 1.65
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t03_sort_photos",
+   "title": "Move 60 photos into a year folder; leave 10 moves unticked",
+   "rep": 1,
+   "tag": "5c2a65",
+   "covers": [
+    "shell-mv-many",
+    "apply-unticked"
+   ],
+   "apply_variant": "unticked",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083005-b739",
+    "wall_s": 2.706,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/008_t03_sort_photos-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 2,
+    "tool_calls": 1,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.59,
+    "status": "finished",
+    "ledger": {
+     "expected": 60,
+     "optional_expected": 2,
+     "captured": 60,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 2,
+       "row_ids": [
+        2
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 3,
+       "row_ids": [
+        3
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 4,
+       "row_ids": [
+        4
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 5,
+       "row_ids": [
+        5
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 6,
+       "row_ids": [
+        6
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 7,
+       "row_ids": [
+        7
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 8,
+       "row_ids": [
+        8
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 9,
+       "row_ids": [
+        9
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 10,
+       "row_ids": [
+        10
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 11,
+       "row_ids": [
+        11
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 12,
+       "row_ids": [
+        12
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 13,
+       "row_ids": [
+        13
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 14,
+       "row_ids": [
+        14
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 15,
+       "row_ids": [
+        15
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 16,
+       "row_ids": [
+        16
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 17,
+       "row_ids": [
+        17
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 18,
+       "row_ids": [
+        18
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 19,
+       "row_ids": [
+        19
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 20,
+       "row_ids": [
+        20
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 21,
+       "row_ids": [
+        21
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 22,
+       "row_ids": [
+        22
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 23,
+       "row_ids": [
+        23
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 24,
+       "row_ids": [
+        24
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 25,
+       "row_ids": [
+        25
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 26,
+       "row_ids": [
+        26
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 27,
+       "row_ids": [
+        27
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 28,
+       "row_ids": [
+        28
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 29,
+       "row_ids": [
+        29
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 30,
+       "row_ids": [
+        30
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 31,
+       "row_ids": [
+        31
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 32,
+       "row_ids": [
+        32
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 33,
+       "row_ids": [
+        33
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 34,
+       "row_ids": [
+        34
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 35,
+       "row_ids": [
+        35
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 36,
+       "row_ids": [
+        36
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 37,
+       "row_ids": [
+        37
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 38,
+       "row_ids": [
+        38
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 39,
+       "row_ids": [
+        39
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 40,
+       "row_ids": [
+        40
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 41,
+       "row_ids": [
+        41
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 42,
+       "row_ids": [
+        42
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 43,
+       "row_ids": [
+        43
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 44,
+       "row_ids": [
+        44
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 45,
+       "row_ids": [
+        45
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 46,
+       "row_ids": [
+        46
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 47,
+       "row_ids": [
+        47
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 48,
+       "row_ids": [
+        48
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 49,
+       "row_ids": [
+        49
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 50,
+       "row_ids": [
+        50
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 51,
+       "row_ids": [
+        51
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 52,
+       "row_ids": [
+        52
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 53,
+       "row_ids": [
+        53
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 54,
+       "row_ids": [
+        54
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 55,
+       "row_ids": [
+        55
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 56,
+       "row_ids": [
+        56
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 57,
+       "row_ids": [
+        57
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 58,
+       "row_ids": [
+        58
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 59,
+       "row_ids": [
+        59
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 60,
+       "row_ids": [
+        60
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 61,
+       "row_ids": [
+        61
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 61,
+     "leaf_rows": 60,
+     "classes": {
+      "command": 1,
+      "file": 60
+     },
+     "attempted_tools": [
+      "terminal"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "unticked",
+    "flags": [
+     "--except",
+     "52,53,54,55,56,57,58,59,60,61"
+    ],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34,
+     35,
+     36,
+     37,
+     38,
+     39,
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47,
+     48,
+     49,
+     50,
+     51
+    ],
+    "applied": 50,
+    "applied_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34,
+     35,
+     36,
+     37,
+     38,
+     39,
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47,
+     48,
+     49,
+     50,
+     51
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 0.94,
+    "seconds_inside": 0.015,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/009_t03_sort_photos_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 50,
+     "file_rows_unticked": 10
+    },
+    "post_checks": [],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "335da9",
+    "exit_code": 0,
+    "wall_s": 1.196,
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": true,
+    "sink_paths": [],
+    "expected_sink": 0,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/010_t03_sort_photos-r1-off",
+    "escape_visible": false,
+    "control": false
+   },
+   "overhead": {
+    "on_wall_s": 2.706,
+    "off_wall_s": 1.196,
+    "ratio": 2.26,
+    "delta_s": 1.51
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t04_release_webhook",
+   "title": "Write release notes and POST them to the deploy webhook",
+   "rep": 1,
+   "tag": "28c915",
+   "covers": [
+    "file-create",
+    "webhook-post",
+    "drift-create",
+    "off-control"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083013-2dec",
+    "wall_s": 3.593,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/011_t04_release_webhook-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 4,
+    "tool_calls": 3,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.67,
+    "status": "finished",
+    "ledger": {
+     "expected": 2,
+     "optional_expected": 0,
+     "captured": 2,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        1
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 1,
+       "row_ids": [
+        2
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 2,
+     "leaf_rows": 2,
+     "classes": {
+      "file": 1,
+      "http": 1
+     },
+     "attempted_tools": [
+      "read_file",
+      "terminal",
+      "write_file"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": {
+    "kind": "create",
+    "path": "release_notes.md",
+    "exit_code": 4,
+    "status": "drift",
+    "drift_paths": [
+     "release_notes.md"
+    ],
+    "workspace_unchanged": true,
+    "sink_new": 0,
+    "smtp_new": 0,
+    "receipt_model_calls": 0,
+    "pass": true
+   },
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1,
+     2
+    ],
+    "applied": 2,
+    "applied_ids": [
+     1,
+     2
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 2.325,
+    "seconds_inside": 0.388,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/013_t04_release_webhook_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [
+      [
+       "POST",
+       "/hooks/28c915/deploy"
+      ]
+     ],
+     "got": [
+      [
+       "POST",
+       "/hooks/28c915/deploy"
+      ]
+     ],
+     "exact": true,
+     "body_matches_file": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 1,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "7151a4",
+    "exit_code": 0,
+    "wall_s": 1.407,
+    "sink_new": 1,
+    "smtp_new": 0,
+    "workspace_changed": true,
+    "sink_paths": [
+     "/hooks/7151a4/deploy"
+    ],
+    "expected_sink": 1,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/014_t04_release_webhook-r1-off",
+    "escape_visible": true,
+    "control": true
+   },
+   "overhead": {
+    "on_wall_s": 3.593,
+    "off_wall_s": 1.407,
+    "ratio": 2.55,
+    "delta_s": 2.19
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t05_invoice_email",
+   "title": "Email an invoice and log it",
+   "rep": 1,
+   "tag": "c76c19",
+   "covers": [
+    "email",
+    "shell-file-edit",
+    "off-control"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083025-5d62",
+    "wall_s": 3.744,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/015_t05_invoice_email-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 4,
+    "tool_calls": 3,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.78,
+    "status": "finished",
+    "ledger": {
+     "expected": 2,
+     "optional_expected": 0,
+     "captured": 2,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        1
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 1,
+       "row_ids": [
+        3
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 3,
+     "leaf_rows": 2,
+     "classes": {
+      "outbound": 1,
+      "command": 1,
+      "file": 1
+     },
+     "attempted_tools": [
+      "evalkit_send_email",
+      "read_file",
+      "terminal"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1,
+     2,
+     3
+    ],
+    "applied": 2,
+    "applied_ids": [
+     1,
+     3
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 1.141,
+    "seconds_inside": 0.202,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/016_t05_invoice_email_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [
+      [
+       "billing@leebakery.test",
+       "Invoice 1042"
+      ]
+     ],
+     "got": [
+      [
+       "billing@leebakery.test",
+       "Invoice 1042"
+      ]
+     ],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 1,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [
+     {
+      "check": [
+       "file_equals",
+       "sent.log",
+       "invoice-1041 emailed\ninvoice-1042 emailed\n"
+      ],
+      "ok": true
+     }
+    ],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "0b4654",
+    "exit_code": 0,
+    "wall_s": 1.338,
+    "sink_new": 0,
+    "smtp_new": 1,
+    "workspace_changed": true,
+    "sink_paths": [],
+    "expected_sink": 0,
+    "expected_smtp": 1,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/017_t05_invoice_email-r1-off",
+    "escape_visible": true,
+    "control": true
+   },
+   "overhead": {
+    "on_wall_s": 3.744,
+    "off_wall_s": 1.338,
+    "ratio": 2.8,
+    "delta_s": 2.41
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t06_standup_chat",
+   "title": "Post the standup to two chat channels; untick one",
+   "rep": 1,
+   "tag": "b425cd",
+   "covers": [
+    "chat-message",
+    "plugin-tool",
+    "apply-unticked"
+   ],
+   "apply_variant": "unticked",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083034-68e1",
+    "wall_s": 3.649,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/018_t06_standup_chat-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 4,
+    "tool_calls": 3,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.5,
+    "status": "finished",
+    "ledger": {
+     "expected": 2,
+     "optional_expected": 0,
+     "captured": 2,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        1
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 1,
+       "row_ids": [
+        2
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 2,
+     "leaf_rows": 2,
+     "classes": {
+      "outbound": 2
+     },
+     "attempted_tools": [
+      "evalkit_chat_post",
+      "read_file"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "unticked",
+    "flags": [
+     "--except",
+     "2"
+    ],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1
+    ],
+    "applied": 1,
+    "applied_ids": [
+     1
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 1.202,
+    "seconds_inside": 0.208,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/019_t06_standup_chat_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [
+      [
+       "POST",
+       "/kit/chat/team"
+      ]
+     ],
+     "got": [
+      [
+       "POST",
+       "/kit/chat/team"
+      ]
+     ],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 0,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "ff5922",
+    "exit_code": 0,
+    "wall_s": 1.118,
+    "sink_new": 2,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sink_paths": [
+     "/kit/chat/team",
+     "/kit/chat/bots"
+    ],
+    "expected_sink": 2,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/020_t06_standup_chat-r1-off",
+    "escape_visible": true,
+    "control": false
+   },
+   "overhead": {
+    "on_wall_s": 3.649,
+    "off_wall_s": 1.118,
+    "ratio": 3.26,
+    "delta_s": 2.53
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t07_wiki_push",
+   "title": "Push a page to the wiki through an MCP-style write tool",
+   "rep": 1,
+   "tag": "edad05",
+   "covers": [
+    "mcp-write-tool",
+    "unknown-effect"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083043-40aa",
+    "wall_s": 3.891,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/021_t07_wiki_push-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 3,
+    "tool_calls": 2,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.66,
+    "status": "finished",
+    "ledger": {
+     "expected": 1,
+     "optional_expected": 0,
+     "captured": 1,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        1
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 1,
+     "leaf_rows": 1,
+     "classes": {
+      "outbound": 1
+     },
+     "attempted_tools": [
+      "mcp__evalnotes__push",
+      "read_file"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1
+    ],
+    "applied": 1,
+    "applied_ids": [
+     1
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 1.259,
+    "seconds_inside": 0.236,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/022_t07_wiki_push_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [
+      [
+       "POST",
+       "/kit/mcp/q4-plan-edad05"
+      ]
+     ],
+     "got": [
+      [
+       "POST",
+       "/kit/mcp/q4-plan-edad05"
+      ]
+     ],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 0,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [
+     {
+      "check": [
+       "sentinel_contains",
+       "mcp_push.log",
+       "q4-plan-edad05"
+      ],
+      "ok": true
+     }
+    ],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "256034",
+    "exit_code": 0,
+    "wall_s": 1.095,
+    "sink_new": 1,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sink_paths": [
+     "/kit/mcp/q4-plan-256034"
+    ],
+    "expected_sink": 1,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/023_t07_wiki_push-r1-off",
+    "escape_visible": true,
+    "control": false
+   },
+   "overhead": {
+    "on_wall_s": 3.891,
+    "off_wall_s": 1.095,
+    "ratio": 3.55,
+    "delta_s": 2.8
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t08_cron_digest",
+   "title": "Create a weekly digest cron job",
+   "rep": 1,
+   "tag": "6762d9",
+   "covers": [
+    "cron-create",
+    "hermes-state"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083052-d7da",
+    "wall_s": 2.829,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/024_t08_cron_digest-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [
+      "cron/.tick.lock",
+      "cron/ticker_heartbeat",
+      "cron/ticker_last_success"
+     ],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 2,
+    "tool_calls": 1,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.6,
+    "status": "finished",
+    "ledger": {
+     "expected": 1,
+     "optional_expected": 0,
+     "captured": 1,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        1
+       ],
+       "how": "bridge-wrapped"
+      }
+     ],
+     "rows": 1,
+     "leaf_rows": 1,
+     "classes": {
+      "unknown": 1
+     },
+     "attempted_tools": [
+      "tool_call"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [],
+    "applied": 0,
+    "applied_ids": [],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 0.918,
+    "seconds_inside": 0.0,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/025_t08_cron_digest_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 0,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [
+     {
+      "check": [
+       "home_contains",
+       "cron",
+       "weekly-digest-6762d9"
+      ],
+      "ok": false
+     }
+    ],
+    "failures": [
+     "post-apply check failed: ('home_contains', 'cron', 'weekly-digest-6762d9')"
+    ],
+    "pass": false
+   },
+   "off": {
+    "tag": "1f93e1",
+    "exit_code": 0,
+    "wall_s": 1.044,
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sink_paths": [],
+    "expected_sink": 0,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/026_t08_cron_digest-r1-off",
+    "escape_visible": false,
+    "control": false
+   },
+   "overhead": {
+    "on_wall_s": 2.829,
+    "off_wall_s": 1.044,
+    "ratio": 2.71,
+    "delta_s": 1.79
+   },
+   "verdict": {
+    "pass": false,
+    "failures": [
+     "effect #1 is recorded under the bridge name tool_call, not cronjob_manage",
+     "apply: post-apply check failed: ('home_contains', 'cron', 'weekly-digest-6762d9')"
+    ]
+   }
+  },
+  {
+   "task": "t09_delegate",
+   "title": "Delegate research to a child session that writes a file and pings a webhook",
+   "rep": 1,
+   "tag": "8b3eee",
+   "covers": [
+    "delegate-child",
+    "file-create",
+    "webhook-post"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083100-cbae",
+    "wall_s": 3.766,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/027_t09_delegate-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 6,
+    "tool_calls": 4,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.81,
+    "status": "finished",
+    "ledger": {
+     "expected": 3,
+     "optional_expected": 0,
+     "captured": 3,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        1
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 1,
+       "row_ids": [
+        2
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 2,
+       "row_ids": [
+        3
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 3,
+     "leaf_rows": 3,
+     "classes": {
+      "file": 2,
+      "http": 1
+     },
+     "attempted_tools": [
+      "delegate_task",
+      "terminal",
+      "write_file"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1,
+     2,
+     3
+    ],
+    "applied": 3,
+    "applied_ids": [
+     1,
+     2,
+     3
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 2.279,
+    "seconds_inside": 0.345,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/028_t09_delegate_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [
+      [
+       "POST",
+       "/hooks/8b3eee/research"
+      ]
+     ],
+     "got": [
+      [
+       "POST",
+       "/hooks/8b3eee/research"
+      ]
+     ],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 2,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "b90e08",
+    "exit_code": 0,
+    "wall_s": 1.216,
+    "sink_new": 1,
+    "smtp_new": 0,
+    "workspace_changed": true,
+    "sink_paths": [
+     "/hooks/b90e08/research"
+    ],
+    "expected_sink": 1,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/029_t09_delegate-r1-off",
+    "escape_visible": true,
+    "control": false
+   },
+   "overhead": {
+    "on_wall_s": 3.766,
+    "off_wall_s": 1.216,
+    "ratio": 3.1,
+    "delta_s": 2.55
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t10_code_report",
+   "title": "Compute a sales report with execute_code, then POST the metric from code",
+   "rep": 1,
+   "tag": "f252d7",
+   "covers": [
+    "execute-code",
+    "file-create",
+    "webhook-post",
+    "off-control"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083110-ecd0",
+    "wall_s": 3.256,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/030_t10_code_report-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 3,
+    "tool_calls": 2,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.94,
+    "status": "finished",
+    "ledger": {
+     "expected": 2,
+     "optional_expected": 0,
+     "captured": 1,
+     "covered_unpreviewed": 1,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        2
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 1,
+       "row_ids": [
+        3
+       ],
+       "how": "covered_unpreviewed"
+      }
+     ],
+     "rows": 3,
+     "leaf_rows": 2,
+     "classes": {
+      "command": 2,
+      "file": 1
+     },
+     "attempted_tools": [
+      "execute_code"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     1,
+     2
+    ],
+    "applied": 1,
+    "applied_ids": [
+     2
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 1.052,
+    "seconds_inside": 0.001,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/031_t10_code_report_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 1,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "d8ca36",
+    "exit_code": 0,
+    "wall_s": 1.152,
+    "sink_new": 1,
+    "smtp_new": 0,
+    "workspace_changed": true,
+    "sink_paths": [
+     "/hooks/d8ca36/metrics"
+    ],
+    "expected_sink": 1,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/032_t10_code_report-r1-off",
+    "escape_visible": true,
+    "control": true
+   },
+   "overhead": {
+    "on_wall_s": 3.256,
+    "off_wall_s": 1.152,
+    "ratio": 2.83,
+    "delta_s": 2.1
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  },
+  {
+   "task": "t11_memory_skill",
+   "title": "Remember a billing fact and save a skill for it",
+   "rep": 1,
+   "tag": "988a63",
+   "covers": [
+    "memory-write",
+    "skill-write"
+   ],
+   "apply_variant": "default",
+   "on": {
+    "exit_code": 0,
+    "timed_out": false,
+    "rid": "r-20261110-083118-db84",
+    "wall_s": 2.96,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/033_t11_memory_skill-r1_on",
+    "escapes": {
+     "sink_new": 0,
+     "smtp_new": 0,
+     "workspace_changed": false,
+     "sentinel_changed": false,
+     "hermes_state_changed": [],
+     "hermes_housekeeping": [],
+     "sink_paths": [],
+     "total": 0
+    },
+    "model_calls": 3,
+    "tool_calls": 2,
+    "cost_usd": 0.0,
+    "seconds_inside": 1.57,
+    "status": "finished",
+    "ledger": {
+     "expected": 2,
+     "optional_expected": 0,
+     "captured": 2,
+     "covered_unpreviewed": 0,
+     "missed": [],
+     "extra": [],
+     "matches": [
+      {
+       "expect": 0,
+       "row_ids": [
+        1
+       ],
+       "how": "exact"
+      },
+      {
+       "expect": 1,
+       "row_ids": [
+        2
+       ],
+       "how": "exact"
+      }
+     ],
+     "rows": 2,
+     "leaf_rows": 2,
+     "classes": {
+      "state": 2
+     },
+     "attempted_tools": [
+      "memory",
+      "skill_manage"
+     ],
+     "blocked_rows": 0
+    }
+   },
+   "drift": null,
+   "apply": {
+    "variant": "default",
+    "flags": [],
+    "exit_code": 0,
+    "status": "ok",
+    "selected": [
+     2
+    ],
+    "applied": 1,
+    "applied_ids": [
+     2
+    ],
+    "failed_ids": [],
+    "not_appliable": {},
+    "wall_s": 1.284,
+    "seconds_inside": 0.246,
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/034_t11_memory_skill_apply",
+    "model_calls": {
+     "receipt": 0,
+     "stub_delta": 0,
+     "trap_delta": 0,
+     "nonet_denials": 0,
+     "denial_samples": []
+    },
+    "sink": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "smtp": {
+     "expected": [],
+     "got": [],
+     "exact": true
+    },
+    "files": {
+     "match": true,
+     "mismatches": [],
+     "file_rows_applied": 0,
+     "file_rows_unticked": 0
+    },
+    "post_checks": [
+     {
+      "check": [
+       "home_contains",
+       "skills",
+       "invoice-mailer-988a63"
+      ],
+      "ok": true
+     }
+    ],
+    "failures": [],
+    "pass": true
+   },
+   "off": {
+    "tag": "ad03ff",
+    "exit_code": 0,
+    "wall_s": 1.233,
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sink_paths": [],
+    "expected_sink": 0,
+    "expected_smtp": 0,
+    "new_rehearsal_dirs": [],
+    "log": "/Users/you/projects/hermes-clotho/.run/w2-measure/runs/20261110-082940/logs/035_t11_memory_skill-r1-off",
+    "escape_visible": false,
+    "control": false
+   },
+   "overhead": {
+    "on_wall_s": 2.96,
+    "off_wall_s": 1.233,
+    "ratio": 2.4,
+    "delta_s": 1.73
+   },
+   "verdict": {
+    "pass": true,
+    "failures": []
+   }
+  }
+ ],
+ "totals": {
+  "task_runs": 11,
+  "passed": 10,
+  "expected_effects": 117,
+  "captured": 116,
+  "covered_unpreviewed": 1,
+  "missed": 0,
+  "extra": 0,
+  "escapes": 0,
+  "applies": 11,
+  "applies_ok": 10,
+  "apply_model_calls": 0,
+  "apply_nonet_denials": 0,
+  "drift_cases": 2,
+  "drift_stopped": 2,
+  "off_runs": 11,
+  "off_controls": 3,
+  "off_controls_visible": 3,
+  "median_overhead_ratio": 2.71
+ },
+ "stopped_early": null,
+ "cost_usd_reported": 0.0
+}

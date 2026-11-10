@@ -1,0 +1,17 @@
+Three models cleaned up one folder. Two deleted the résumé. None of it happened.
+
+In Greek myth, three Fates spin, measure and cut the thread of every life. Nous named its RL framework Atropos, the Fate who cuts. Clotho is her sister. She spins.
+
+My plugin for the Hermes Agent spins every possible future of an agent task, lets you measure them, and keeps only the one you choose.
+
+Every side effect goes into a ledger instead of happening: files, commands, messages, web requests, cron jobs. Untick what you don't want. Apply replays exactly what you kept, with zero model calls.
+
+Fork spins the same task on several models at once. Compare the futures and apply only the one you keep. Here, the Claude timeline kept all ten precious files. The demo replays that fork in about ten seconds, no key needed.
+
+If a file changes after the run, apply stops before touching anything.
+
+Cron mode spins a scheduled job before it runs on its own.
+
+In seventy-two task runs, not one request, email or workspace change got out, and every apply landed exactly.
+
+Clotho is open source, MIT licensed. Spin every future. Keep one. Thanks, Nous Research.

@@ -1,0 +1,976 @@
+{
+ "git_commit": "b117488",
+ "git_dirty": [
+  "demo/seed/make_seed.py"
+ ],
+ "controls": {
+  "sink_logs_a_post": true,
+  "smtp_logs_a_message": true,
+  "trap_sees_a_proxied_call": true,
+  "sandbox_blocks_internet": true,
+  "sandbox_logs_the_denial": true,
+  "scripted_endpoint_up": true
+ },
+ "runs": [
+  {
+   "case": "q1_bridge_single",
+   "rep": 1,
+   "rid": "r-20261110-104717-b3b2",
+   "on_exit": 0,
+   "on_wall_s": 2.915,
+   "on_seconds_inside": 1.55,
+   "off_wall_s": 1.117,
+   "captured": 1,
+   "expected": 1,
+   "extra": [],
+   "hows": [
+    "exact"
+   ],
+   "attempted_tools": [
+    "cronjob_manage"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [
+    {
+     "check": [
+      "home_contains",
+      "cron",
+      "probe-digest-8d9ffc"
+     ],
+     "ok": true
+    }
+   ],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q2_bridge_batch",
+   "rep": 1,
+   "rid": "r-20261110-104726-836d",
+   "on_exit": 0,
+   "on_wall_s": 2.643,
+   "on_seconds_inside": 1.47,
+   "off_wall_s": 1.078,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "evalkit_chat_post"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [
+     [
+      "POST",
+      "/kit/chat/ops"
+     ],
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "got": [
+     [
+      "POST",
+      "/kit/chat/ops"
+     ],
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [
+    "/kit/chat/team",
+    "/kit/chat/ops"
+   ],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q3_catalog_reads",
+   "rep": 1,
+   "rid": "r-20261110-104734-e61d",
+   "on_exit": 0,
+   "on_wall_s": 2.658,
+   "on_seconds_inside": 1.46,
+   "off_wall_s": 1.228,
+   "captured": 1,
+   "expected": 1,
+   "extra": [],
+   "hows": [
+    "exact"
+   ],
+   "attempted_tools": [
+    "evalkit_chat_post",
+    "tool_describe",
+    "tool_search"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "got": [
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [
+    "/kit/chat/team"
+   ],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q4_skill_view",
+   "rep": 1,
+   "rid": "r-20261110-104742-dc61",
+   "on_exit": 0,
+   "on_wall_s": 2.726,
+   "on_seconds_inside": 1.47,
+   "off_wall_s": 1.085,
+   "captured": 0,
+   "expected": 0,
+   "extra": [],
+   "hows": [],
+   "attempted_tools": [
+    "skill_view"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p1_seq_write_patch",
+   "rep": 1,
+   "rid": "r-20261110-104750-8f94",
+   "on_exit": 0,
+   "on_wall_s": 3.681,
+   "on_seconds_inside": 1.48,
+   "off_wall_s": 2.516,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "patch",
+    "read_file",
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p2_par_write_patch",
+   "rep": 1,
+   "rid": "r-20261110-104801-b97e",
+   "on_exit": 0,
+   "on_wall_s": 3.965,
+   "on_seconds_inside": 1.75,
+   "off_wall_s": 1.281,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "patch",
+    "read_file",
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p3_par_two_writes",
+   "rep": 1,
+   "rid": "r-20261110-104811-4266",
+   "on_exit": 0,
+   "on_wall_s": 3.852,
+   "on_seconds_inside": 1.65,
+   "off_wall_s": 1.196,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [
+     "cron/.tick.lock",
+     "cron/ticker_heartbeat",
+     "cron/ticker_last_success"
+    ],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q1_bridge_single",
+   "rep": 2,
+   "rid": "r-20261110-104820-b086",
+   "on_exit": 0,
+   "on_wall_s": 2.708,
+   "on_seconds_inside": 1.53,
+   "off_wall_s": 1.128,
+   "captured": 1,
+   "expected": 1,
+   "extra": [],
+   "hows": [
+    "exact"
+   ],
+   "attempted_tools": [
+    "cronjob_manage"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [
+    {
+     "check": [
+      "home_contains",
+      "cron",
+      "probe-digest-12f51b"
+     ],
+     "ok": true
+    }
+   ],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q2_bridge_batch",
+   "rep": 2,
+   "rid": "r-20261110-104828-5841",
+   "on_exit": 0,
+   "on_wall_s": 3.015,
+   "on_seconds_inside": 1.7,
+   "off_wall_s": 1.135,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "evalkit_chat_post"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [
+     [
+      "POST",
+      "/kit/chat/ops"
+     ],
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "got": [
+     [
+      "POST",
+      "/kit/chat/ops"
+     ],
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [
+    "/kit/chat/team",
+    "/kit/chat/ops"
+   ],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q3_catalog_reads",
+   "rep": 2,
+   "rid": "r-20261110-104837-4127",
+   "on_exit": 0,
+   "on_wall_s": 2.967,
+   "on_seconds_inside": 1.63,
+   "off_wall_s": 1.312,
+   "captured": 1,
+   "expected": 1,
+   "extra": [],
+   "hows": [
+    "exact"
+   ],
+   "attempted_tools": [
+    "evalkit_chat_post",
+    "tool_describe",
+    "tool_search"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "got": [
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [
+    "/kit/chat/team"
+   ],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q4_skill_view",
+   "rep": 2,
+   "rid": "r-20261110-104849-2e5a",
+   "on_exit": 0,
+   "on_wall_s": 3.478,
+   "on_seconds_inside": 1.94,
+   "off_wall_s": 1.232,
+   "captured": 0,
+   "expected": 0,
+   "extra": [],
+   "hows": [],
+   "attempted_tools": [
+    "skill_view"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p1_seq_write_patch",
+   "rep": 2,
+   "rid": "r-20261110-104858-49c6",
+   "on_exit": 0,
+   "on_wall_s": 4.157,
+   "on_seconds_inside": 1.81,
+   "off_wall_s": 1.511,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "patch",
+    "read_file",
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p2_par_write_patch",
+   "rep": 2,
+   "rid": "r-20261110-104908-0fe9",
+   "on_exit": 0,
+   "on_wall_s": 4.45,
+   "on_seconds_inside": 1.91,
+   "off_wall_s": 5.867,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "patch",
+    "read_file",
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [
+     "cron/.tick.lock",
+     "cron/ticker_heartbeat",
+     "cron/ticker_last_success"
+    ],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p3_par_two_writes",
+   "rep": 2,
+   "rid": "r-20261110-104923-b96c",
+   "on_exit": 0,
+   "on_wall_s": 4.537,
+   "on_seconds_inside": 2.72,
+   "off_wall_s": 1.566,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q1_bridge_single",
+   "rep": 3,
+   "rid": "r-20261110-104934-a182",
+   "on_exit": 0,
+   "on_wall_s": 3.363,
+   "on_seconds_inside": 1.9,
+   "off_wall_s": 1.464,
+   "captured": 1,
+   "expected": 1,
+   "extra": [],
+   "hows": [
+    "exact"
+   ],
+   "attempted_tools": [
+    "cronjob_manage"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [
+    {
+     "check": [
+      "home_contains",
+      "cron",
+      "probe-digest-75fb54"
+     ],
+     "ok": true
+    }
+   ],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q2_bridge_batch",
+   "rep": 3,
+   "rid": "r-20261110-104943-05c8",
+   "on_exit": 0,
+   "on_wall_s": 3.41,
+   "on_seconds_inside": 1.82,
+   "off_wall_s": 1.131,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "evalkit_chat_post"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [
+     [
+      "POST",
+      "/kit/chat/ops"
+     ],
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "got": [
+     [
+      "POST",
+      "/kit/chat/ops"
+     ],
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [
+    "/kit/chat/team",
+    "/kit/chat/ops"
+   ],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q3_catalog_reads",
+   "rep": 3,
+   "rid": "r-20261110-104952-abf3",
+   "on_exit": 0,
+   "on_wall_s": 2.827,
+   "on_seconds_inside": 1.51,
+   "off_wall_s": 1.261,
+   "captured": 1,
+   "expected": 1,
+   "extra": [],
+   "hows": [
+    "exact"
+   ],
+   "attempted_tools": [
+    "evalkit_chat_post",
+    "tool_describe",
+    "tool_search"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "got": [
+     [
+      "POST",
+      "/kit/chat/team"
+     ]
+    ],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [
+    "/kit/chat/team"
+   ],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "q4_skill_view",
+   "rep": 3,
+   "rid": "r-20261110-105001-c5b5",
+   "on_exit": 0,
+   "on_wall_s": 2.867,
+   "on_seconds_inside": 1.53,
+   "off_wall_s": 1.13,
+   "captured": 0,
+   "expected": 0,
+   "extra": [],
+   "hows": [],
+   "attempted_tools": [
+    "skill_view"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p1_seq_write_patch",
+   "rep": 3,
+   "rid": "r-20261110-105010-64fd",
+   "on_exit": 0,
+   "on_wall_s": 3.967,
+   "on_seconds_inside": 1.62,
+   "off_wall_s": 1.447,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "patch",
+    "read_file",
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [
+     "cron/.tick.lock",
+     "cron/ticker_heartbeat",
+     "cron/ticker_last_success"
+    ],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p2_par_write_patch",
+   "rep": 3,
+   "rid": "r-20261110-105019-b424",
+   "on_exit": 0,
+   "on_wall_s": 3.739,
+   "on_seconds_inside": 1.55,
+   "off_wall_s": 1.347,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "patch",
+    "read_file",
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  },
+  {
+   "case": "p3_par_two_writes",
+   "rep": 3,
+   "rid": "r-20261110-105029-09a4",
+   "on_exit": 0,
+   "on_wall_s": 4.197,
+   "on_seconds_inside": 1.84,
+   "off_wall_s": 1.255,
+   "captured": 2,
+   "expected": 2,
+   "extra": [],
+   "hows": [
+    "exact",
+    "exact"
+   ],
+   "attempted_tools": [
+    "write_file"
+   ],
+   "escapes": {
+    "sink_new": 0,
+    "smtp_new": 0,
+    "workspace_changed": false,
+    "sentinel_changed": false,
+    "hermes_state_changed": [],
+    "hermes_housekeeping": [],
+    "sink_paths": [],
+    "total": 0
+   },
+   "apply_status": "ok",
+   "apply_sink": {
+    "expected": [],
+    "got": [],
+    "exact": true
+   },
+   "apply_post": [],
+   "off_sink_paths": [],
+   "pass": true,
+   "failures": []
+  }
+ ]
+}
