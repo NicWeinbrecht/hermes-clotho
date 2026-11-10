@@ -256,6 +256,33 @@ class ForkCap(unittest.TestCase):
         self.assertIn("stopped at its cap of 2 model calls", p.stdout)
         self.assertEqual(sorted(os.listdir(ws)), ["a.txt"])
 
+    def test_cap_is_armed_before_the_first_model_call(self):
+        """The cap sees the timeline's very first model call (call 1 is in its log, the provider answers only
+        1 of a 3-step task at --max-calls 1); and a timeline whose cap cannot be armed makes no model call."""
+        ws = H.make_ws("fork_cap1", {"a.txt": "a\n"})
+        mark = H.script("fork_cap1", [[call("write_file", path=f"s_{k}.txt", content=f"{k}\n")] for k in range(1, 4)],
+                        "all three steps done")
+        n0 = F.tools_requests()
+        p = F.fork([f"{mark} write the steps", "--models", f"one={_stub()}", "--max-calls", "1"], ws, "fork_cap1")
+        n1 = F.tools_requests()
+        self.assertEqual(p.returncode, 0, p.stderr[-2000:])
+        self.assertEqual(n1 - n0, 1, "the provider answered more model calls than the cap of 1")
+        calls = H.lines(os.path.join(F.forks_root(), p.fid, "one.calls.jsonl"))
+        self.assertEqual([(c["k"], c["capped"]) for c in calls][:2], [(1, False), (2, True)], calls)
+        self.assertEqual(F.record(p.fid)["timelines"][0]["status"], "capped")
+
+        # fail closed: the cap cannot be armed (injected fault) -> the timeline stops before any model call
+        n2 = len(H.lines(H.STUB_LOG))  # every request the scripted provider got, title calls included
+        q = F.fork([f"{mark} write the steps", "--models", f"nocap={_stub()}", "--max-calls", "1"], ws,
+                   "fork_cap_fault", **{names.env("TEST_FAULT"): "cap"})
+        self.assertEqual(len(H.lines(H.STUB_LOG)) - n2, 0, "a timeline without its cap reached the provider")
+        with open(os.path.join(F.forks_root(), q.fid, "nocap.err.txt")) as f:
+            err = f.read()
+        self.assertIn("cannot install the model-call cap (RuntimeError: injected fault (cap)); not starting the model",
+                      err)
+        self.assertFalse(os.path.exists(os.path.join(F.forks_root(), q.fid, "nocap.calls.jsonl")))
+        self.assertNotEqual(F.record(q.fid)["timelines"][0]["status"], "finished")
+
 
 class ForkModels(unittest.TestCase):
     def test_models_with_one_that_cannot_start(self):

@@ -178,6 +178,24 @@ def handle(args):
     return 2
 
 
+def arm_timeline() -> bool:
+    """In a fork's timeline process (ENV_FORK_ID set): arm the model-call cap and, in the demo, the recorded
+    turns (both are the plugin's registered llm_execution middleware) before the model starts. False, with
+    the reason on stderr, when that cannot be done: the model is then not started."""
+    if not os.environ.get(fork.ENV_FORK_ID):
+        return True
+    in_demo = bool(os.environ.get(demo.ENV_REPLAY) or os.environ.get(demo.ENV_RECORD))
+    try:
+        fork.arm_cap()
+        if in_demo:
+            demo.arm_turns()
+    except Exception as exc:
+        what = "the model-call cap or the recorded turns" if in_demo else "the model-call cap"
+        sys.stderr.write(f"cannot install {what} ({type(exc).__name__}: {exc}); not starting the model\n")
+        return False
+    return True
+
+
 def cmd_run(args):
     task = args.task
     provider = args.provider
@@ -206,7 +224,8 @@ def cmd_run(args):
     try:
         with contextlib.redirect_stdout(buf):
             rc = run_oneshot(task, model=args.model, provider=provider, usage_file=usage,
-                             toolsets=args.toolsets.split(",") if args.toolsets else None)
+                             toolsets=args.toolsets.split(",") if args.toolsets else None) \
+                if arm_timeline() else 3
     except BaseException as exc:  # still finalize what was captured
         err = f"{type(exc).__name__}: {exc}"
     finish(r, rc, usage, time.monotonic() - t0, agent_text=buf.getvalue(), error=err)

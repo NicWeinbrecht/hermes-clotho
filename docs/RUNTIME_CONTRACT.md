@@ -11,7 +11,7 @@ that version; plugin files are named by their path in this repository.
 | registration | Hermes API | used for |
 |---|---|---|
 | `tool_execution` middleware | `ctx.register_middleware` (hermes_cli/plugins.py:939-944; kinds in hermes_cli/middleware.py:19-26) | capture: every tool call of an armed rehearsal passes through it (`capture.tool_execution`) |
-| `llm_execution` middleware | same | counting model calls, so the Apply receipt can say how many it made (`capture.llm_execution`) |
+| `llm_execution` middleware | same | in this order: a fork timeline's model-call cap (`fork.cap_middleware`); counting model calls, so the Apply receipt can say how many it made (`capture.llm_execution`); the demo's recorded turns (`demo.turns_middleware`). The cap and the turns pass calls through unless a timeline process arms them (section 3) |
 | `pre_tool_call` hook | `ctx.register_hook` (hermes_cli/plugins.py:935-937) | the fail-closed backstop (section 4) |
 | `hermes clotho …` | `ctx.register_cli_command` (hermes_cli/plugins.py:635-646) | run, report, apply, list, check, fork, compare, cron, demo |
 | `/clotho on \| off \| report` | `ctx.register_command` (hermes_cli/plugins.py:649-674) | session mode inside a chat |
@@ -70,10 +70,11 @@ looked up by task id as well.
 - Chat sessions run their turns in a gateway (hermes_cli/cli_single_query.py:486-487,
   hermes_cli/gateway_runtime_start.py:43-61). `/clotho on` arms the session in the gateway's memory, keyed by
   session id. The gateway keeps the plugin code it loaded; restart it after updating the plugin.
-- Forks start one `hermes clotho run` child per timeline (`fork.py`), all at once. Each child is started
-  through a small boot script that, right before the child's `run_oneshot` starts the model, puts the
-  per-timeline model-call cap at the front of that child's `llm_execution` chain; the demo's children also
-  load the recorded model turns there. If either cannot be installed, the child stops before any model call.
+- Forks start one `hermes clotho run` child per timeline (`fork.py`), all at once. The per-timeline
+  model-call cap is `llm_execution` middleware the plugin registers ahead of its own model-call counter;
+  the demo's recorded model turns are middleware it registers after the counter. Both pass calls straight
+  through until the child's `hermes clotho run` arms them from the child's environment, right before it
+  starts the model. If either cannot be armed, the child stops before any model call.
   Over the cap, a call is answered with a "stop now" reply and never reaches the provider (raising inside
   `llm_execution` would fail open into the provider, so the cap never raises).
 - `hermes clotho cron <job>` starts one child process per run, each its own rehearsal (`cron.py`).

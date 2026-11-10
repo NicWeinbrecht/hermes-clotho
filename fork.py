@@ -320,9 +320,12 @@ def _log_call(rec: dict) -> None:
 
 
 def cap_middleware(**kw):
-    """Outermost llm_execution middleware of a timeline process: counts model calls and answers every call
-    over the cap itself. It never raises (Hermes would skip a raising middleware and call the provider)."""
+    """llm_execution middleware, registered first by the plugin (__init__.py); armed only in a timeline
+    process (arm_cap). Counts model calls and answers every call over the cap itself. It never raises
+    (Hermes would skip a raising middleware and call the provider). Not armed: passes straight through."""
     next_call, request = kw.get("next_call"), kw.get("request")
+    if not _cap_state["installed"]:
+        return next_call(request)
     with _cap_lock:
         _cap_state["n"] += 1
         k = _cap_state["n"]
@@ -344,46 +347,26 @@ def cap_middleware(**kw):
             os._exit(5)
 
 
-def install_cap() -> None:
-    """Put the cap first in this process's llm_execution chain (idempotent)."""
+def arm_cap() -> None:
+    """Arm the cap in this timeline process, from its environment (idempotent). Called by `hermes clotho
+    run` right before the model starts. Raises when the cap middleware is not in this process's chain."""
     if _cap_state["installed"]:
         return
+    if os.environ.get(names.env("TEST_FAULT")) == "cap":  # test seam (as capture.FAULT_ENV)
+        raise RuntimeError("injected fault (cap)")
+    from hermes_cli.plugins import _delivery_manager  # read only, as cli.selfcheck reads it
+    if cap_middleware not in list(_delivery_manager()._middleware.get("llm_execution", [])):
+        raise RuntimeError("the model-call cap is not registered in this process")
     _cap_state["cap"] = int(os.environ.get(ENV_MAX_CALLS) or 0)
     _cap_state["log"] = os.environ.get(ENV_CALLS_LOG) or None
-    from hermes_cli.plugins import _delivery_manager
-    chain = _delivery_manager()._middleware.setdefault("llm_execution", [])
-    if cap_middleware not in chain:
-        chain.insert(0, cap_middleware)
     _cap_state["installed"] = True
 
 
-# The child process: the stock `hermes clotho run` command, with the cap put in front of the model
-# right after the rehearsal is armed (run_oneshot is looked up when the command calls it). If the cap
-# cannot be found or installed, the child stops before any model call.
-_BOOT = r'''
-import os, sys
-src, fork_py = sys.argv[1], os.path.realpath(sys.argv[2])
-sys.path.insert(0, src)
-sys.argv = ["hermes"] + sys.argv[3:]
-import hermes_cli.oneshot as _oneshot
-_orig = _oneshot.run_oneshot
-def _run(*a, **k):
-    mod = None
-    for m in list(sys.modules.values()):
-        f = getattr(m, "__file__", None)
-        if f and hasattr(m, "install_cap") and os.path.realpath(f) == fork_py:
-            mod = m
-            break
-    try:
-        mod.install_cap()
-    except Exception as exc:
-        sys.stderr.write("cannot install the model-call cap (%s: %s); not starting the model\n" % (type(exc).__name__, exc))
-        return 3
-    return _orig(*a, **k)
-_oneshot.run_oneshot = _run
-from hermes_cli.main import main
-main()
-'''
+# The child process: the stock `hermes clotho run` command, started with the same interpreter. The cap is
+# the plugin's own registered middleware; `hermes clotho run` arms it from the environment (ENV_FORK_ID set)
+# before the model starts, and stops before any model call if it cannot.
+_BOOT = ("import sys; sys.path.insert(0, sys.argv[1]); sys.argv = ['hermes'] + sys.argv[3:]; "
+         "from hermes_cli.main import main; main()")
 
 
 def _hermes_src() -> str:
@@ -393,8 +376,8 @@ def _hermes_src() -> str:
 
 def _child_argv(t: dict, prompt: str, ws: str, toolsets, boot: str | None = None) -> list:
     """The timeline's command line. ``boot`` replaces _BOOT; it gets the same argv (Hermes' source folder,
-    this file's path, then the `hermes` arguments) and must install the cap (install_cap) before any model
-    call, as _BOOT does."""
+    this file's path, then the `hermes` arguments) and must start the stock Hermes CLI, as _BOOT does; it must
+    not wrap or rebind Hermes code (the cap is armed by `hermes clotho run` itself)."""
     argv = [sys.executable, "-B"] + (["-I"] if sys.flags.isolated else []) + \
            ["-c", boot or _BOOT, _hermes_src(), os.path.abspath(__file__), names.CLI_NAME, "run", prompt,
             "--workspace", ws, "--json", "--no-diffs"]

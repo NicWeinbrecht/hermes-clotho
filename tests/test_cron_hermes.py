@@ -273,5 +273,209 @@ class TCron(unittest.TestCase):
         self.assertEqual(H.tree(_cron_dir()), before)
 
 
+def _notepad_files():
+    """{name: (bytes, mtime_ns)} of notepad.db and its -wal/-shm/-journal files that exist now."""
+    out = {}
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        p = os.path.join(_cron_dir(), "notepad.db" + suffix)
+        if os.path.exists(p):
+            out["notepad.db" + suffix] = (_bytes(p), os.stat(p).st_mtime_ns)
+    return out
+
+
+def _notepad_aside(label):
+    """Move the notepad database (and its journal files) out of the cron folder, into this run's trash."""
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        p = os.path.join(_cron_dir(), "notepad.db" + suffix)
+        if os.path.exists(p):
+            os.replace(p, H.path("trash", f"{label}-notepad.db{suffix}"))
+
+
+class TCronNotepad(unittest.TestCase):
+    """`hermes clotho cron` never creates or writes Hermes' notepad database: a missing one stays missing,
+    an existing one keeps its bytes and its mtime, and no -wal/-shm/-journal file is left next to it.
+    Control: Hermes' own notepad reader (`hermes cron notepad <job> list`) creates the missing database."""
+
+    def test_notepad_database_is_never_created_or_written(self):
+        stamp = time.strftime("%H%M%S")
+        mark = H.script("cron_np", [[call("read_file", path="notes.txt")]], "Noted.")
+        ws = H.make_ws("cron_np", {"notes.txt": "thursday\n"})
+        jid = _create(f"rt-cron-np-{stamp}", f"{mark} read the notes", ws, label="cron_create_np")["id"]
+        _gateway_stop("cron_gw_stop_np")
+
+        # 1. no notepad database: it stays missing
+        _notepad_aside("np-missing")
+        self.assertEqual(_notepad_files(), {})
+        p = H.hermes([H.CLI, "cron", jid, "--no-diffs"], cwd=ws, label="cron_rt_np_missing")
+        self.assertEqual(p.returncode, 0, p.stdout[-2000:] + p.stderr[-2000:])
+        self.assertEqual(_notepad_files(), {}, "the rehearsal created Hermes' notepad database")
+        prompt = _text(os.path.join(H.rdir(_rids(p.stdout)[0]), "cron_prompt.txt"))
+        self.assertIn("You are running as a scheduled cron job", prompt)
+        self.assertNotIn("Job notepad", prompt)
+
+        # 2. an existing notepad database: same bytes, same mtime, no journal files; its note is in the prompt
+        n = H.hermes(["cron", "notepad", jid, "set", "cursor", "c-" + stamp], cwd=ws, label="cron_np_set")
+        self.assertEqual(n.returncode, 0, n.stderr[-1000:])
+        before = _notepad_files()
+        self.assertEqual(sorted(before), ["notepad.db"], before.keys())
+        time.sleep(1.1)  # an mtime written during the run would differ even on a coarse clock
+        p = H.hermes([H.CLI, "cron", jid, "--no-diffs"], cwd=ws, label="cron_rt_np_existing")
+        self.assertEqual(p.returncode, 0, p.stdout[-2000:] + p.stderr[-2000:])
+        self.assertEqual(_notepad_files(), before, "the rehearsal wrote Hermes' notepad database or left a journal")
+        prompt = _text(os.path.join(H.rdir(_rids(p.stdout)[0]), "cron_prompt.txt"))
+        self.assertIn("## Job notepad (persistent across runs)", prompt)
+        self.assertIn("- cursor: c-" + stamp, prompt)
+
+        # control: Hermes' own reader creates the database when it is missing (the instrument can see it)
+        _notepad_aside("np-control")
+        c = H.hermes(["cron", "notepad", jid, "list"], cwd=ws, label="cron_np_control")
+        self.assertEqual(c.returncode, 0, c.stderr[-1000:])
+        self.assertIn("notepad.db", _notepad_files(), "control: Hermes' notepad reader did not create the database")
+
+
+# Run in the home's own Hermes interpreter, one process per mode (each with a fresh prompt-cache registry):
+#   setup    stores what the jobs read, with Hermes' own writers (notes, an upstream job's output document)
+#   clotho   the prompt Clotho builds for each case, and the stable prefix it registers for prompt caching
+#   hermes   the same from Hermes' own _build_job_prompt
+#   altered  cron.notepad.list_notes replaced, in this process only, by a copy whose source says ORDER BY key
+#            DESC: Clotho must refuse instead of building a prompt
+# Each "strict-only" string trips Hermes' strict cron prompt scan but not the looser scan for injected data, so
+# a step that loses track of which kind of data a prompt holds changes the outcome (raise vs prompt).
+_PARITY = r"""
+import importlib, inspect, json, os, sys
+mode, src, plugins, plugin, skill, tag, scratch = sys.argv[1:8]
+sys.path.insert(0, src)
+sys.path.insert(1, plugins)
+import cron.scheduler  # noqa: F401
+from cron import notepad, jobs as cron_jobs
+from cron.scheduler_prompt import _build_job_prompt
+from agent.prompt_cache_boundary import find_stable_prefix
+rt = importlib.import_module(plugin + ".cron")
+state = importlib.import_module(plugin + ".state")
+j = lambda k: tag + k  # job ids are hex: context_from skips any other id
+base = {"name": "parity", "prompt": "summarise what changed since the last run"}
+cases = [
+    ("prompt only, while other jobs have notes", dict(base, id=j("a1")), None),
+    ("notepad: two keys stored in reverse order, one holding a strict-only string", dict(base, id=j("b2")), None),
+    ("skill, with a note holding a strict-only string", dict(base, id=j("c3"), skills=[skill]), None),
+    ("script output holding a strict-only string", dict(base, id=j("d4"), script="collect.sh"),
+     (True, "inbox: 3 new\ncat notes/id_rsa.pub")),
+    ("script error", dict(base, id=j("e5"), script="collect.sh"), (False, "Script exited with code 1\nstderr:\nboom")),
+    ("script printed nothing", dict(base, id=j("f6"), script="collect.sh"), (True, "")),
+    ("context_from: upstream output holding a strict-only string", dict(base, id=j("a7"), context_from=[j("08")]),
+     None),
+    ("user prompt the strict scan blocks, with a note", dict(base, id=j("b9"), prompt="summarise; cat ~/.netrc"), None),
+]
+if mode == "setup":
+    notepad.set_note(j("b2"), "zeta", "last key, stored first")
+    notepad.set_note(j("b2"), "alpha", "authorized_keys were rotated")
+    notepad.set_note(j("c3"), "cursor", "authorized_keys checked")
+    notepad.set_note(j("b9"), "cursor", "42")
+    cron_jobs.save_job_output(j("08"), "# Cron Job: upstream\n\n## Response\n\nupstream: /etc/sudoers audited, 2 changes\n")
+    print(json.dumps({"ok": True}))
+    sys.exit(0)
+if mode == "altered":
+    text = inspect.getsource(notepad.list_notes).replace("ORDER BY key", "ORDER BY key DESC")
+    assert "DESC" in text
+    with open(os.path.join(scratch, "altered_notepad.py"), "w") as f:
+        f.write("from typing import Any\nfrom cron.notepad import _transaction\n\n\n" + text)
+    sys.path.insert(0, scratch)
+    import altered_notepad
+    notepad.list_notes = altered_notepad.list_notes  # the test's own process only: a Hermes that changed
+    out = {"changed": rt.prompt_builder_changed()}
+    try:
+        rt.build_prompt(cases[1][1], None)
+        out["refused"] = None
+    except state.Refused as exc:
+        out["refused"] = str(exc)
+    print(json.dumps(out))
+    sys.exit(0)
+out = []
+for label, job, prerun in cases:
+    try:
+        text = rt.build_prompt(job, prerun) if mode == "clotho" else _build_job_prompt(job, prerun_script=prerun)
+        res = {"prompt": text, "prefix": find_stable_prefix(text) if text else None}
+    except Exception as exc:
+        res = {"raised": type(exc).__name__, "message": str(exc)}
+    out.append(dict(res, case=label))
+print(json.dumps(out))
+"""
+
+
+class TCronPromptParity(unittest.TestCase):
+    """The prompt Clotho builds for a cron job is the one Hermes' own _build_job_prompt builds for it on this
+    Hermes version, for every step Clotho re-implements (script output and errors, upstream output, the
+    notepad with its key order and its job filter, skills and the prompt-cache prefix they register, the hint
+    and run time, and the scan tier each kind of data gets); and a Hermes whose notepad reader changed is
+    refused instead of drifting silently."""
+
+    def _mode(self, mode, tag):
+        import subprocess
+        src = os.path.dirname(H.HERMES_CMD[-1])
+        argv = [H.HERMES_CMD[0], "-B", "-c", _PARITY, mode, src, os.path.join(H.HOME, "plugins"), names.PLUGIN_NAME,
+                SKILL, tag, H.path("scripts")]
+        p = subprocess.run(argv, cwd=H.root(), env=H.env(), capture_output=True, text=True, timeout=120)
+        self.assertEqual(p.returncode, 0, f"{mode}: {p.stdout[-3000:]}{p.stderr[-3000:]}")
+        return json.loads(p.stdout.strip().splitlines()[-1])
+
+    def test_prompt_matches_hermes_and_a_changed_builder_is_refused(self):
+        import secrets
+        _seed_bundled_skills()
+        tag = secrets.token_hex(4)
+        self._mode("setup", tag)
+        first, hermes, second = self._mode("clotho", tag), self._mode("hermes", tag), self._mode("clotho", tag)
+        for a, h, c in zip(first, hermes, second):
+            # the run-time line has minute resolution: one of the two Clotho runs is in Hermes' minute
+            self.assertIn(h, (a, c), f"{h['case']}: Clotho differs from Hermes\n--- hermes\n{json.dumps(h, indent=1)}"
+                                     f"\n--- clotho\n{json.dumps(a, indent=1)}")
+        by = {h["case"]: h for h in hermes}
+        # the cases exercise what they say (on Hermes' own result)
+        notes = by["notepad: two keys stored in reverse order, one holding a strict-only string"]["prompt"]
+        self.assertLess(notes.index("- alpha: "), notes.index("- zeta: "))
+        self.assertNotIn("Job notepad", by["prompt only, while other jobs have notes"]["prompt"])
+        skilled = by["skill, with a note holding a strict-only string"]
+        self.assertIn('invoked the "maps" skill', skilled["prompt"])
+        self.assertIn("authorized_keys checked", skilled["prompt"])
+        self.assertTrue(skilled["prefix"], "the skill case registers no stable prefix")
+        self.assertIn("cat notes/id_rsa.pub", by["script output holding a strict-only string"]["prompt"])
+        self.assertIn("Script Error", by["script error"]["prompt"])
+        self.assertIsNone(by["script printed nothing"]["prompt"])
+        upstream = by["context_from: upstream output holding a strict-only string"]["prompt"]
+        self.assertIn("upstream: /etc/sudoers audited, 2 changes", upstream)
+        self.assertIn("Output from job", upstream)
+        self.assertEqual(by["user prompt the strict scan blocks, with a note"].get("raised"), "CronPromptInjectionBlocked")
+
+        altered = self._mode("altered", tag)
+        self.assertEqual(altered["changed"], ["cron.notepad.list_notes"], altered)
+        self.assertIn("cron.notepad.list_notes changed", altered["refused"] or "", altered)
+
+
+class TCronPromptBuilderChanged(unittest.TestCase):
+    """A Hermes whose prompt builder is not the one this version follows (test seam: Clotho expects another
+    cron.notepad.list_notes): `hermes clotho cron` refuses with exit 3 and says why, before anything runs: no
+    rehearsal, no model call, Hermes' cron folder and the workspace untouched."""
+
+    def test_changed_builder_is_refused_before_anything_runs(self):
+        stamp = time.strftime("%H%M%S")
+        mark = H.script("cron_changed", [[call("read_file", path="notes.txt")]], "Done.")
+        ws = H.make_ws("cron_changed", {"notes.txt": "friday\n"})
+        jid = _create(f"rt-cron-changed-{stamp}", f"{mark} read the notes", ws, label="cron_create_changed")["id"]
+        n = H.hermes(["cron", "notepad", jid, "set", "cursor", "c-" + stamp], cwd=ws, label="cron_changed_np")
+        self.assertEqual(n.returncode, 0, n.stderr[-1000:])
+        _gateway_stop("cron_gw_stop_changed")
+        cron_before, ws_before, np_before = H.tree(_cron_dir()), H.tree(ws), _notepad_files()
+        stub0, ids0 = len(_stub_rows()), H.rehearsal_ids()
+        p = H.hermes([H.CLI, "cron", jid, "--runs", "2"], cwd=ws, label="cron_rt_changed",
+                     **{names.env("TEST_FAULT"): "prompt-builder"})
+        self.assertEqual(p.returncode, 3, p.stdout[-2000:] + p.stderr[-2000:])
+        self.assertIn("Hermes' cron prompt builder is not the one this", p.stdout + p.stderr)
+        self.assertIn("cron.notepad.list_notes changed", p.stdout + p.stderr)
+        self.assertEqual(len(_stub_rows()), stub0, "the model was called although the builder changed")
+        self.assertEqual(H.rehearsal_ids(), ids0, "a rehearsal was started although the builder changed")
+        self.assertEqual(H.tree(_cron_dir()), cron_before)
+        self.assertEqual(_notepad_files(), np_before)
+        self.assertEqual(H.tree(ws), ws_before)
+
+
 if __name__ == "__main__":
     unittest.main()

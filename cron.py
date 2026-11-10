@@ -217,8 +217,9 @@ def state_changes(before: dict, after: dict) -> list:
     return out
 
 
-def _notes_readonly(job_id: str, home=None) -> list:
-    p = os.path.join(cron_dir(home), "notepad.db")
+def _notes_readonly(job_id: str, home=None, path=None) -> list:
+    """cron.notepad.list_notes through a read-only handle."""
+    p = path or os.path.join(cron_dir(home), "notepad.db")
     if not os.path.exists(p):
         return []
     with contextlib.closing(_ro_sqlite(p)) as c:
@@ -293,21 +294,114 @@ def run_script_sandboxed(r: state.Rehearsal, job: dict):
     return (True, stdout), None
 
 
-def build_prompt(job: dict, prerun):
-    """The prompt Hermes builds for a scheduled run of ``job`` (cron.scheduler._build_job_prompt), with
-    the notepad read through a read-only handle (Hermes' reader opens the database for writing and
-    creates it when it is missing). ``prerun`` is the script result; the script never runs here."""
-    if job.get("script") and prerun is None:
-        raise RuntimeError("the pre-run script must run in the sandbox first")
+def _notepad_section(job_id: str, notepad) -> str:
+    """cron.notepad.render_notepad_section over cron.notepad.list_notes, with the read-only reader (Hermes'
+    reader opens the database for writing and creates it when it is missing). The database is the one
+    cron.notepad._current_notepad_file names."""
+    try:
+        p = notepad.NOTEPAD_FILE or (pathlib.Path(hermes_home()).resolve() / "cron" / "notepad.db")
+        notes = _notes_readonly(job_id, path=str(p))
+    except Exception:
+        return ""
+    if not notes:
+        return ""
+    lines = [f"- {note['key']}: {note['value']}" for note in notes]
+    return (
+        "## Job notepad (persistent across runs)\n"
+        "This durable scratchpad survives between scheduled runs of this "
+        "job. Update it via the CLI, e.g.:\n"
+        f"`hermes cron notepad {job_id} set <key> <value>` "
+        f"(also: get/delete/list; `hermes cron notepad {job_id} delete "
+        "<key>` removes an entry).\n\n" + "\n".join(lines) + "\n\n"
+    )
+
+
+# The Hermes functions whose behaviour build_prompt and _notepad_section re-implement (instead of calling
+# them), with the sha256 of each one's source as this version was written and tested against
+# (tests/test_cron_hermes.py, TCronPromptParity). Functions that are only called are not listed. A Hermes
+# in which any of them differs is refused, so the rehearsed prompt never drifts from the real one silently.
+_PROMPT_BUILDER = {
+    "cron.scheduler_prompt._build_job_prompt": "f3bbf13ef74a625409282984770e8daeac1c366e8f1ce60758fd82659ba9c3f8",
+    "cron.notepad.render_notepad_section": "a60171e77577659d156debb9b201f33dacc2b302c7730debc8f756e59c07c364",
+    "cron.notepad.list_notes": "43f4e65c6d88f9ac2a00bb8291a662d3b1f8aaf7639470b809873df05ce74e89",
+    "cron.notepad._current_notepad_file": "d4aa1e309b06e53f5ff43d19f2fd160b8b988c61692ab2867c11cba53e240bfc",
+    "cron.notepad._initialize_schema": "293e2ff8a24b753fbc8c490bab727f6bade9cf0fb9327c3c29c7e1b0c1f08205",
+}
+
+
+def prompt_builder_changed() -> list:
+    """The names in _PROMPT_BUILDER whose source in this Hermes differs (empty = the builder this version
+    follows)."""
+    import inspect
     import cron.scheduler  # noqa: F401  (loads the prompt module's late imports)
     from cron import notepad
-    from cron.scheduler_prompt import _build_job_prompt
-    orig = notepad.list_notes
-    notepad.list_notes = _notes_readonly
-    try:
-        return _build_job_prompt(job, prerun_script=prerun)
-    finally:
-        notepad.list_notes = orig
+    from cron import scheduler_prompt as sp
+    mods = {"cron.scheduler_prompt": sp, "cron.notepad": notepad}
+    want = dict(_PROMPT_BUILDER)
+    if os.environ.get(names.env("TEST_FAULT")) == "prompt-builder":  # test seam: this version expects another
+        want["cron.notepad.list_notes"] = "0" * 64
+    out = []
+    for name, digest in want.items():
+        mod, attr = name.rsplit(".", 1)
+        try:
+            got = hashlib.sha256(inspect.getsource(getattr(mods[mod], attr)).encode()).hexdigest()
+        except (AttributeError, OSError, TypeError):
+            got = None
+        if got != digest:
+            out.append(name)
+    return out
+
+
+def _builder_refusal(changed: list) -> state.Refused:
+    return state.Refused(f"Hermes' cron prompt builder is not the one this {names.PRODUCT} version follows "
+                         f"({', '.join(changed)} changed), so a rehearsal could run another prompt than a real "
+                         f"run; update {names.PRODUCT}")
+
+
+def build_prompt(job: dict, prerun):
+    """The prompt Hermes builds for a scheduled run of ``job``: cron.scheduler_prompt._build_job_prompt
+    step by step, with Hermes' own helpers, except that the notepad is read through a read-only handle.
+    ``prerun`` is the script result; the script never runs here."""
+    if job.get("script") and prerun is None:
+        raise RuntimeError("the pre-run script must run in the sandbox first")
+    changed = prompt_builder_changed()
+    if changed:
+        raise _builder_refusal(changed)
+    from cron import notepad
+    from cron import scheduler_prompt as sp
+    user_prompt = str(job.get("prompt") or "")
+    prompt, injected = user_prompt, False
+    if job.get("script"):
+        success, output = prerun
+        if success and not output:
+            return None  # Hermes skips the agent run
+        heading, intro = (
+            ("Script Output", "The following data was collected by a pre-run script. "
+                              "Use it as context for your analysis.")
+            if success
+            else ("Script Error", "The data-collection script failed. Report this to the user."))
+        prompt, injected = sp._prepend_context_block(prompt, heading, intro, output), True
+    prompt, from_context = sp._inject_context_from(job, prompt)
+    injected = injected or from_context
+    section = _notepad_section(str(job.get("id") or ""), notepad)
+    if section:
+        prompt, injected = f"{section}{prompt}", True
+    prompt = sp._CRON_HINT + sp._run_time_line() + prompt
+    skill_names = sp._job_skill_names(job)
+    if not skill_names:
+        return sp._scan_assembled_cron_prompt(prompt, job, has_skills=False, has_injected_data=injected,
+                                              user_prompt=user_prompt)
+    parts = sp._load_cron_skill_parts(job, skill_names)
+    stable_prefix = None
+    if prompt:
+        from agent.skill_commands import append_user_instruction
+        parts.append("")
+        stable_prefix = append_user_instruction(parts, prompt)
+    assembled = sp._scan_assembled_cron_prompt("\n".join(parts), job, has_skills=True)
+    if stable_prefix and len(assembled) > len(stable_prefix) and assembled.startswith(stable_prefix):
+        from agent.prompt_cache_boundary import register_stable_prefix
+        register_stable_prefix(stable_prefix)
+    return assembled
 
 
 def cron_toolsets(job: dict):
@@ -346,6 +440,9 @@ def child_run(args) -> int:
         problems = job_problems(job, sandbox.available() if job.get("script") else None)
         if problems:
             raise state.Refused("; ".join(problems))
+        changed = prompt_builder_changed()  # before anything runs: no rehearsal, no script, no model call
+        if changed:
+            raise _builder_refusal(changed)
         model = args.model or job.get("model") or None
         provider = args.provider or job.get("provider") or None
         problems = cli.selfcheck(provider)
@@ -396,6 +493,8 @@ def child_run(args) -> int:
     try:
         with capture.usage_kept(r):  # loading the job's skills must not move Hermes' usage counters
             prompt = build_prompt(job, prerun)
+    except state.Refused as exc:
+        return stop("refused", str(exc), 3)
     except Exception as exc:
         if type(exc).__name__ == "CronPromptInjectionBlocked":
             return stop("refused", f"Hermes' cron prompt scanner blocks this job's prompt: {exc}", 3)

@@ -144,34 +144,10 @@ if _GLOG:
     _s._rt_demo_control = False
 ''' % {"env": ENV_GUARD, "trace": names.env("DEMO_TRACE"), "product": names.PRODUCT}
 
-# The process the demo starts: the stock Hermes CLI, with the guard first. A timeline process (it calls
-# run_oneshot) also gets the fork's model-call cap and the demo's replay or recorder, right after the
-# rehearsal is armed. If any of that cannot be installed the timeline stops before a model call.
-_BOOT = _GUARD + r'''
-import os, sys
-src, fork_py = sys.argv[1], os.path.realpath(sys.argv[2])
-demo_py = os.path.join(os.path.dirname(fork_py), "demo.py")
-sys.path.insert(0, src)
-sys.argv = ["hermes"] + sys.argv[3:]
-import hermes_cli.oneshot as _oneshot
-_orig = _oneshot.run_oneshot
-def _mod(path, attr):
-    for m in list(sys.modules.values()):
-        f = getattr(m, "__file__", None)
-        if f and hasattr(m, attr) and os.path.realpath(f) == path:
-            return m
-def _run(*a, **k):
-    try:
-        _mod(fork_py, "install_cap").install_cap()
-        _mod(demo_py, "install_turns").install_turns()
-    except Exception as exc:
-        sys.stderr.write("cannot install the model-call cap or the recorded turns (%s: %s); not starting the model\n" % (type(exc).__name__, exc))
-        return 3
-    return _orig(*a, **k)
-_oneshot.run_oneshot = _run
-from hermes_cli.main import main
-main()
-'''
+# The process the demo starts: the stock Hermes CLI, with the guard first. In a timeline process,
+# `hermes clotho run` arms the fork's model-call cap and the demo's replay or recorder (the plugin's own
+# registered middleware) before the model starts; if it cannot, the timeline stops before a model call.
+_BOOT = _GUARD + "\n" + fork._BOOT + "\n"
 
 
 # ---------------------------------------------------------------- responses to JSON and back
@@ -310,7 +286,7 @@ def _hash_pairs_at_replay(root: str, sink_port) -> list:
 
 
 # ---------------------------------------------------------------- recorder and replay (timeline process)
-_turns = {"installed": False, "rows": None, "i": 0, "lock": threading.Lock(), "header": None,
+_turns = {"installed": False, "mode": None, "rows": None, "i": 0, "lock": threading.Lock(), "header": None,
           "sessions": {}, "next": {}}
 
 
@@ -425,13 +401,23 @@ def load_recording(path: str) -> tuple[dict, list]:
     return head, rows
 
 
-def install_turns() -> None:
-    """Called in a timeline process right after the rehearsal is armed: append the recorder or the
-    replay to the llm_execution chain (innermost, so the cap and the capture layer still see every call)."""
+def turns_middleware(**kw):
+    """llm_execution middleware, registered by the plugin after the capture layer (__init__.py), so the cap
+    and the capture layer still see every call. Armed in a demo timeline process (arm_turns): the replay or
+    the recorder. Not armed: passes straight through."""
+    mode = _turns["mode"]
+    if mode == "replay":
+        return replay_middleware(**kw)
+    if mode == "record":
+        return record_middleware(**kw)
+    return kw.get("next_call")(kw.get("request"))
+
+
+def arm_turns() -> None:
+    """Called by `hermes clotho run` in a timeline process before the model starts: arm the replay (the
+    recorded turns are loaded now) or the recorder, as the environment says."""
     if _turns["installed"]:
         return
-    from hermes_cli.plugins import _delivery_manager
-    chain = _delivery_manager()._middleware.setdefault("llm_execution", [])
     if os.environ.get(ENV_REPLAY):
         if os.environ.get(ENV_TEST_NO_REPLAY):  # control: no recording, so the model endpoint is called
             _turns["installed"] = True
@@ -440,9 +426,9 @@ def install_turns() -> None:
         _turns["header"], _turns["rows"] = load_recording(path)
         if not _turns["rows"]:
             raise RuntimeError(f"no recorded turns in {path}")
-        chain.append(replay_middleware)
+        _turns["mode"] = "replay"
     elif os.environ.get(ENV_RECORD):
-        chain.append(record_middleware)
+        _turns["mode"] = "record"
     _turns["installed"] = True
 
 

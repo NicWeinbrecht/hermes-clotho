@@ -322,6 +322,8 @@ run 2026-11-11T09:00:00+08:00
 
 - The prompt is the one Hermes builds for a scheduled run of the job: the cron instructions, the run time,
   its skills, notepad, upstream job output and script output. The run gets the toolsets a cron run gets.
+  `hermes clotho cron` refuses to run, and says why, if Hermes' cron prompt builder has changed from the
+  version it follows.
 - A pre-run script runs inside the same macOS sandbox as shell commands, in the rehearsal's copy of the
   workspace, and its output goes into the prompt. If the script needs the network, writes a file or does
   anything else the sandbox stops, the run stops before the model is called and says why, and the later
