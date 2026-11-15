@@ -18,6 +18,11 @@ import tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PKG = "clotho_under_test"
+# Apply checks every file effect with Hermes' own write guard (agent/file_safety.py, standard library only) and
+# refuses to write when it cannot load it: these tests import it from Hermes' source, behind everything else.
+HERMES_SRC = os.environ.get("HERMES_SRC") or os.path.expanduser("~/.hermes/hermes-agent")
+if HERMES_SRC not in sys.path:
+    sys.path.append(HERMES_SRC)
 
 
 def load_plugin():

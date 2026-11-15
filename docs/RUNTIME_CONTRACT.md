@@ -115,6 +115,11 @@ so.
 
 Apply replays ticked effects with no model in the loop:
 
+- Before any change, every selected file effect's real path (and a move's source) goes through Hermes' own write
+  guard, the public functions its file tools call: `agent.file_safety.get_write_denied_error(path, verb=,
+  entry=)` and `is_write_approval_required(path)` (agent/file_safety.py:315-336). A refused path stops the
+  apply (exit 3) whatever `--force` says; if the module cannot be imported, every file effect is refused.
+- Effects outside the workspace are unticked by default and run only when named with `--only`.
 - File effects are written byte for byte from the rehearsal's blob store.
 - Messages, web requests and Hermes-state effects call the real tool implementation by name with the stored
   arguments: `model_tools.discover_builtin_tools()` then `model_tools.handle_function_call(name, args,

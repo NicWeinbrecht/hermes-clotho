@@ -340,7 +340,7 @@ def _file_row(r, tool, a, kw, t, before, before_blob, after, after_blob, origina
     target = {"kind": "file", "path": rel if inws else live, "abs_path": live, "in_workspace": inws}
     if via and requested:
         target["requested_path"] = requested
-    return _row(r, "file", tool, a, kw, change=change, target=target,
+    return _row(r, "file", tool, a, kw, change=change, target=target, default_selected=bool(inws),
                 summary=f"{verb} {label} (+{plus} -{minus})" + (f" (through a symlink: {requested})" if via and requested else ""),
                 before=before, original=original if _first_touch(r, rel if inws else live) else None,
                 after=after, blob=after_blob if change != "deleted" else None, badges=badges,
@@ -633,7 +633,7 @@ def _outside_row(r, tool, a, kw, o, parent_id):
     original = snapshot.fingerprint(live) if _first_touch(r, live) else None
     original_from = snapshot.fingerprint(o["from"]) if change == "renamed" and _first_touch(r, o["from"]) else None
     return _row(r, "file", tool, a, kw, change=change, parent_id=parent_id, original_from=original_from,
-                target={"kind": kind, "path": live, "abs_path": live, "in_workspace": False},
+                default_selected=False, target={"kind": kind, "path": live, "abs_path": live, "in_workspace": False},
                 from_path=o.get("from"), badges=["OUTSIDE WORKSPACE"],
                 summary=f"{verb} {label}" + (f" (+{plus} -{minus})" if diff else ""),
                 before=before, original=original, after=after, blob=blob,
@@ -771,6 +771,12 @@ def _shell_effect(r, tool, a, kw):
         rows = [_change_row(r, tool, a, kw, c, snap, cmd_row["id"]) for c in changes]
         rows += [_outside_row(r, tool, a, kw, o, cmd_row["id"]) for o in outside]
         cmd_row["children"] = [row["id"] for row in rows]
+        if outside:  # one unit: a move out of the workspace must never land as its delete alone
+            cmd_row["default_selected"] = False
+            cmd_row["apply"]["reason"] = ("runs only when you name it (--only N): it changes files outside the "
+                                          "workspace; naming the command applies all the changes listed under it")
+            for row in rows:
+                row["default_selected"] = False
         _write(r, cmd_row)
         for row in rows:
             _write(r, row)

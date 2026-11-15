@@ -92,8 +92,8 @@ similar) are held, because a fetch can trigger a webhook. Everything else is hel
   a short allowlist of environment variables (paths, user, shell, terminal, locale, `PYTHONPATH`,
   `HERMES_HOME`), so a rehearsed `env` shows none of the keys or settings Hermes runs with. Their
   `HOME` is a copy-on-write mirror of your home: a write there (say `mv old.zip ~/.Trash/`) stays in the mirror
-  and shows up as an `OUTSIDE WORKSPACE` effect, ticked like any file effect, so Apply would make it in your
-  real home. A write to an absolute path into your real home is blocked.
+  and shows up as an `OUTSIDE WORKSPACE` effect, unticked: Apply makes it in your real home only when you name
+  it, or the command that made it, with `--only`. A write to an absolute path into your real home is blocked.
   When a command returns, its process group is killed, and so is a child that started its own session
   (the Disclosure names the one case this misses).
 - `execute_code` runs in the same sandbox. Every call gets a row with its code; code that names a network
@@ -146,10 +146,12 @@ apply:  hermes clotho apply r-20261110-064852-f4ca
 choose: --only 1,2  --except 3  (numbers above)
 ```
 
-- Every effect is ticked by default, messages and web requests included. Three kinds are unticked and run only
+- Every effect is ticked by default, messages and web requests included. Four kinds are unticked and run only
   when you name them with `--only`: tools Clotho does not know, held fetches (`web_extract`,
-  `vision_analyze` and similar), and commands it could not preview (they needed the network, wrote outside the
-  workspace, read a secret or started a background process).
+  `vision_analyze` and similar), commands it could not preview (they needed the network, wrote outside the
+  workspace, read a secret or started a background process), and effects outside the workspace (`OUTSIDE
+  WORKSPACE`). A command that changed a file outside the workspace is unticked with all its changes, so a move
+  out of the workspace never lands as its delete alone; naming the command applies every change under it.
 - A single plain `curl` or `wget` call is shown as a web request (method, URL, headers, body) and is ticked like
   any other effect; apply re-runs that exact command. One that saves to or reads from a file (`-o`, `-O`,
   `-T`, `-F field=@file`, a config or cookie file) is shown as a command it could not preview instead.
@@ -173,7 +175,11 @@ choose: --only 1,2  --except 3  (numbers above)
 With no ID, `report` and `apply` take the newest rehearsal in this Hermes home, whatever the current folder. When
 that one is a fork timeline or a cron run, `apply` stops (exit 3), changes nothing and lists the ids to name.
 
-1. It checks everything before it changes anything. If a file changed since the rehearsal, or a folder on an
+1. It checks everything before it changes anything. Every file effect's real path (and a move's source) goes
+   through Hermes' own write guard first, the check its file tools make (`agent/file_safety.py`): if an effect
+   would write a path Hermes never writes (`~/.ssh/authorized_keys`, `.netrc`, Hermes' `.env`, the credential
+   folders; `~/.ssh/config`, which Hermes writes only after asking), it stops and names it (exit 3), and
+   `--force` does not change that. If a file changed since the rehearsal, or a folder on an
    effect's path has since been replaced by a symlink, it stops and names the file (exit 4); each write checks
    the folder again just before it lands. If a ticked effect certainly depends on an unticked one, it stops and
    names both (exit 5); tick the dependency too, untick the dependent, or pass `--force`. A guessed dependency
@@ -187,7 +193,8 @@ that one is a fork timeline or a cron run, `apply` stops (exit 3), changes nothi
 4. The receipt ends with `applied 4/4 · skipped 0 · 0 model calls · 0.4 s`.
 
 Exit codes: 0 applied, 1 failed or incomplete, 2 no such rehearsal or effect, 3 refused (inside a
-rehearsal, or no ID for a fork timeline or cron run), 4 drift, 5 dependency.
+rehearsal, no ID for a fork timeline or cron run, or a path Hermes' write guard refuses), 4 drift,
+5 dependency.
 
 ## Forks
 

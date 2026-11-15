@@ -1,6 +1,10 @@
 """Apply: replay exactly the ticked effects, in ledger order, with no model calls.
 
-1. Selection: the default ticks (or --only / --except). A command's file changes follow the command.
+1. Selection: the default ticks (or --only / --except). A command's file changes follow the command;
+   effects outside the workspace are never ticked by default, so they run only when named with --only.
+   Then Hermes' own write guard: every selected file effect's real path (and a move's source) goes through
+   agent.file_safety, the check Hermes' file tools make before they write. A path it refuses stops the
+   apply before ANY change (EXIT_REFUSED); --force does not change that.
 2. Dependencies: every "effect B used effect A's would-be output" edge, recorded in the ledger or
    guessed here from paths, file contents and folder-reading commands (``dependencies``). If a ticked
    effect certainly needs an unticked one that is not already in place, Apply stops before ANY
@@ -104,12 +108,14 @@ def select(rows, only=None, except_=None):
     bad = [i for i in ex if i not in by_id]
     if bad:
         raise ValueError(f"no effect numbered {', '.join(map(str, bad))}")
-    # a command group selects / excludes its file changes
+    # a command group selects / excludes its file changes; a group ticked by default leaves out a change that is
+    # unticked by default (outside the workspace), which runs only when it, or its command, is named
     for r in rows:
         if r.get("children"):
             if r["id"] in sel and r["id"] not in ex:
+                named = bool(only) and r["id"] in only
                 for c in r["children"]:
-                    if c not in ex:
+                    if c not in ex and (named or by_id[c].get("default_selected", True)):
                         sel.add(c)
             if r["id"] in ex:
                 sel.discard(r["id"])
@@ -136,6 +142,50 @@ def select(rows, only=None, except_=None):
             else:
                 sel.discard(r["id"])
     return sel, skipped
+
+
+# ---------------------------------------------------------------- Hermes' write guard
+def _write_targets(r):
+    """(path, entry) for every real path a file row writes: its target and, for a move, its source.
+    ``entry``: the row removes or renames the directory entry itself (Hermes vets the link, not its target)."""
+    t = r.get("target") or {}
+    live = t.get("abs_path") or t.get("path")
+    ch = r.get("change")
+    if ch == "renamed":
+        src = r.get("from_path") or ""
+        if not os.path.isabs(src):
+            ws_root = live[: len(live) - len(t["path"])] if live.endswith(t["path"]) else ""
+            src = os.path.join(ws_root, src)
+        return [(live, False), (src, True)]
+    return [(live, ch == "deleted")]
+
+
+def write_denials(rows, sel) -> list:
+    """Selected file effects Hermes' own write guard refuses, one entry per refused path:
+    ``{"id", "summary", "path", "why"}``. The guard is Hermes' public check in agent/file_safety.py
+    (get_write_denied_error: credential files such as ~/.ssh/authorized_keys and ~/.netrc, the credential
+    folders, Hermes' secret stores, the runtime's own files, HERMES_WRITE_SAFE_ROOT; is_write_approval_required:
+    ~/.ssh/config, which Hermes writes only after asking, and apply cannot ask). If the guard cannot be loaded,
+    every selected file effect is refused: nothing is written unchecked."""
+    files = [r for r in rows if r["id"] in sel and r["class"] == "file"]
+    if not files:
+        return []
+    try:
+        from agent.file_safety import get_write_denied_error, is_write_approval_required
+    except Exception as exc:
+        why = f"Hermes' write guard (agent.file_safety) cannot be loaded ({type(exc).__name__}: {exc})"
+        return [{"id": r["id"], "summary": r["summary"], "path": (r.get("target") or {}).get("abs_path"), "why": why}
+                for r in files]
+    out = []
+    for r in files:
+        verb = {"deleted": "Delete", "renamed": "Move"}.get(r.get("change"), "Write")
+        for path, entry in _write_targets(r):
+            why = get_write_denied_error(path, verb=verb, entry=entry)
+            if not why and is_write_approval_required(path):
+                why = f"{verb} denied: '{path}' needs Hermes' approval for each write, which apply cannot ask for."
+            if why:
+                out.append({"id": r["id"], "summary": r["summary"], "path": path, "why": why})
+    return out
 
 
 # ---------------------------------------------------------------- dependencies
@@ -630,6 +680,9 @@ def _apply(rid, rdir, only, except_, dry_run, force) -> dict:
             _save_receipt(rdir, receipt)
         return receipt
 
+    denied = write_denials(rows, sel)
+    if denied:  # before the dependency stop and the drift check, and whatever --force says
+        return stop("denied", denied=denied)
     if conflicts and not force:
         return stop("dependency")
     try:
@@ -714,7 +767,7 @@ def _apply(rid, rdir, only, except_, dry_run, force) -> dict:
 
 
 def exit_code(receipt) -> int:
-    return {"ok": EXIT_OK, "dry-run": EXIT_OK, "drift": EXIT_DRIFT,
+    return {"ok": EXIT_OK, "dry-run": EXIT_OK, "drift": EXIT_DRIFT, "denied": EXIT_REFUSED,
             "dependency": EXIT_DEPENDENCY}.get(receipt.get("status"), EXIT_FAILED)
 
 

@@ -35,6 +35,7 @@ Logs, workspaces and the sink log of each run land in `<dirname of HERMES_TEST_H
 | `test_run_sh` | `tests/run.sh` adds the scripted provider inside an existing `providers:` block and installs the demo's data |
 | `test_sandbox_env` | a rehearsed `env` prints no variable of the process that runs Hermes (through `sandbox.run`, and through the middleware with Hermes' real terminal tool); `extra_env` still reaches the command |
 | `test_skill_usage` | a rehearsed `skill_view` is counted by Hermes as a normal read, and a count another writer makes while it runs survives |
+| `test_apply_guard` | Apply refuses, before any change and whatever `--force` or `--only` say, an effect on a path Hermes' own write guard refuses (the SSH key list under a scratch HOME, a move out of Hermes' `.env`): exit 3, every file byte-identical; effects outside the workspace (a write, a move into the Trash) run only when named |
 | `test_validate` | `hermes plugins validate` on a clean export of the tracked files passes: security scan safe, no rebinding of Hermes core |
 
 The live end-to-end run with a hosted model (it spends a few tenths of a cent) is separate:

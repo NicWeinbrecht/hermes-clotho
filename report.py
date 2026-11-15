@@ -768,7 +768,7 @@ def receipt_line(rc: dict) -> str:
     if rc.get("status") == "drift":
         names_ = ", ".join(f"{d['path']} {d.get('why') or 'changed since the rehearsal'}" for d in rc.get("drift", []))
         return f"stopped before any change: {names_} · applied 0 · {rc.get('model_calls', 0)} model calls"
-    if rc.get("status") == "dependency":
+    if rc.get("status") in ("dependency", "denied"):
         return f"stopped before any change · applied 0 · {rc.get('model_calls', 0)} model calls"
     if rc.get("status") == "dry-run":
         return f"dry run: {len(rc.get('selected', []))} effects would apply · no drift"
@@ -811,6 +811,13 @@ def render_receipt(rc: dict, color=None, width=None) -> str:
         out.extend(_c(ln, "bold", on=on) for ln in wrap(
             "warning (a guess, not a stop): ticked effects may use the output of unticked ones", w))
         out.extend(_conflict_lines(rc, w, on, key="guesses"))
+    if rc.get("status") == "denied":
+        out.extend(_c(ln, "bold", on=on) for ln in
+                   wrap("stopped before any change: Hermes never writes these paths (--force does not change that)", w))
+        for d in rc.get("denied") or []:
+            out.extend("  " + ln for ln in wrap(f"#{d['id']} {_clean(d['summary'])}", w - 2))
+            out.extend("     " + _c(ln, "dim", on=on) for ln in wrap(_clean(d["why"]), w - 5))
+        out.extend(wrap("untick them (--except) to apply the rest.", w))
     if rc.get("status") == "drift":
         for d in rc["drift"]:
             out.extend(_c(ln, "bold", on=on) for ln in
@@ -846,7 +853,7 @@ def render_receipt(rc: dict, color=None, width=None) -> str:
 def receipt_lines(rc: dict, w: int, on: bool) -> list:
     """The receipt's last line(s), bold; on an apply that ran, its "0 model calls" is the one red number."""
     parts = receipt_line(rc).split(" · ")
-    ran = rc.get("status") not in ("drift", "dependency", "dry-run")
+    ran = rc.get("status") not in ("drift", "dependency", "denied", "dry-run")
     key = f"{rc.get('model_calls')} model calls"
     styled = [_c(p, "red", on=on) if ran and p == key and rc.get("model_calls") == 0 else _c(p, "bold", on=on)
               for p in parts]
