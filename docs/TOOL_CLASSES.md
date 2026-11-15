@@ -141,7 +141,7 @@ in this version.)
 | setup_beat | onboarding | Hermes state: captured | ticked | tools/setup_beat_tool.py:212 |
 | show_tip | desktop_ui | runs for real |  | tools/tip_tool.py:78 |
 | skill_manage | skills | Hermes state: captured | ticked | tools/skill_manager_tool.py:942 |
-| skill_view | skills | runs for real |  | tools/skills_tool.py:758 |
+| skill_view | skills | runs for real (Hermes counts the read in skills/.usage.json) |  | tools/skills_tool.py:758 |
 | skills_list | skills | runs for real |  | tools/skills_tool.py:754 |
 | terminal | terminal | shell: runs in the sandboxed clone, or captured as can't preview | ticked / can't preview unticked | tools/terminal_tool.py:1673 |
 | text_to_speech | tts | outbound: captured, IRREVERSIBLE | ticked | tools/tts_tool.py:742 |

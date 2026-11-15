@@ -14,7 +14,6 @@ pre_tool_call backstop blocks any effectful call that reaches Hermes' real dispa
 """
 from __future__ import annotations
 
-import contextlib
 import json
 import os
 import re
@@ -204,8 +203,7 @@ def tool_execution(**kw):
     held = getattr(_tls, "reading", None)
     _tls.reading = r
     try:
-        with (usage_kept(r) if tool in _BUMPING_READS else _nothing()):
-            res = _call_stamped(tool, kw, mapped, next_call)
+        res = _call_stamped(tool, kw, mapped, next_call)
     finally:
         _tls.reading = held
     try:
@@ -267,69 +265,12 @@ def _origin():
     return o if o in ("background_review", "refine_review") else None  # "assistant_tool" / "foreground": the task
 
 
-# ---------------------------------------------------------------- reads that write bookkeeping
-# skill_view bumps view/use counters in <home>/skills/.usage.json after a successful read
-# (tools/skills_tool.py _skill_view_with_bump -> tools/skill_usage.bump_view / bump_use), and a cron job's
-# skills are bumped while its prompt is built. The read runs for real; afterwards the counters it moved are
-# put back under Hermes' own lock for that file (only the records that changed, to what they were), so a
-# read leaves the home as it was. Nothing in Hermes is replaced. kanban_list promotes tasks whose parents
-# are done (recompute_ready, a board write): it is held instead (classify.CAPTURE_READS).
-_BUMPING_READS = {"skill_view"}
-_usage_active = [0]          # usage_kept blocks running now (parallel reads of one turn)
-_usage_active_lock = threading.Lock()
-
-
-@contextlib.contextmanager
-def _nothing():
-    yield
-
-
-@contextlib.contextmanager
-def usage_kept(r):
-    """Run the block; then undo any change it made to Hermes' skill usage counters."""
-    try:
-        import tools.skill_usage as su
-        path = su._usage_file()
-        lock = path.with_suffix(".json.lock")
-        existed, lock_existed = path.exists(), lock.exists()
-        before = su.load_usage() if existed else {}
-    except Exception:
-        su = None
-    with _usage_active_lock:
-        _usage_active[0] += 1
-    try:
-        yield
-    finally:
-        with _usage_active_lock:
-            _usage_active[0] -= 1
-            last = _usage_active[0] == 0
-        if su is not None:
-            try:
-                _undo_usage(r, su, path, lock, before, existed, lock_existed or not last)
-            except Exception as exc:
-                _trace(r, where="bookkeeping", error=f"{type(exc).__name__}: {exc}")
-
-
-def _undo_usage(r, su, path, lock, before, existed, lock_existed) -> None:
-    with su._usage_file_lock():
-        now = su.load_usage() if path.exists() else {}
-        moved = sorted(k for k in set(now) | set(before) if now.get(k) != before.get(k))
-        if moved:
-            for k in moved:
-                if k in before:
-                    now[k] = before[k]
-                else:
-                    now.pop(k, None)
-            if not existed and not now:
-                path.unlink(missing_ok=True)
-            else:
-                su.save_usage(now)
-            _trace(r, where="bookkeeping", held="skill_usage counters", undone=moved[:10])
-    if not lock_existed:
-        try:
-            lock.unlink()
-        except OSError:
-            pass
+# ---------------------------------------------------------------- reads
+# skill_view runs for real, so Hermes counts it the way it counts any read: it bumps the skill's view and use
+# counters in <home>/skills/.usage.json (tools/skills_tool.py _skill_view_with_bump), and a cron job's skills
+# are counted while its prompt is built. The plugin never writes that store: putting counters back would also
+# undo what other sessions counted meanwhile. kanban_list promotes tasks whose parents are done
+# (recompute_ready, a board write): it is held instead (classify.CAPTURE_READS).
 
 
 def _abs_for(r: state.Rehearsal, path: str) -> str:

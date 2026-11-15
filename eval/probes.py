@@ -6,7 +6,8 @@ Each probe runs through eval/run.py's real Run.task() (plugin on, Apply, plugin 
   q1_bridge_single   tool_call bridge, single form, to a tool outside the session's toolsets (cronjob_manage)
   q2_bridge_batch    tool_call bridge, batch form {"calls": [...]}, two chat posts in one call
   q3_catalog_reads   tool_search + tool_describe before a bridged chat post: the lookups must not become rows
-  q4_skill_view      skill_view on an existing skill: skills/.usage.json must not change during the rehearsal
+  q4_skill_view      skill_view on an existing skill (since the plugin stopped restoring Hermes' usage counters,
+                     the rehearsal bumps skills/.usage.json as a normal read does)
   p2_par_write_patch write_file + patch in ONE model turn (previous: ~120 s stall)
   p3_par_two_writes  two write_file in ONE model turn (previous: ~120 s stall)
   p1_seq_write_patch the same calls in separate turns (reference)

@@ -18,7 +18,7 @@ Logs, workspaces and the sink log of each run land in `<dirname of HERMES_TEST_H
 | test | proves |
 |---|---|
 | T1 `T1OnOff` | rehearsal on: the sink sees 0 requests, the workspace hash is unchanged, the ledger holds the file, web request, code and plugin-tool effects; rehearsal off: the same scripted calls reach the sink and write the file, and no ledger is created |
-| T2 `T2Escape` | one call per tool class (read, file, file outside the workspace, shell inside / outside / hard link / background / osascript, code, plugin send, unknown-effect plugin tool, web_extract, memory, skills, subagent): workspace, sentinel folder and Hermes memory/skills/cron hashes unchanged, sink empty, violations read from the kernel's sandbox log, subagent's effects captured |
+| T2 `T2Escape` | one call per tool class (read, file, file outside the workspace, shell inside / outside / hard link / background / osascript, code, plugin send, unknown-effect plugin tool, web_extract, memory, skills, subagent): workspace, sentinel folder and Hermes memory/skills/cron hashes unchanged (skills/`.usage.json` aside: Hermes counts reads there), sink empty, violations read from the kernel's sandbox log, subagent's effects captured |
 | T3 `T3FailClosed` | a fault inside the middleware, in classification, or one that escapes the catch-all (backstop) blocks every call: nothing written, nothing sent |
 | T4 `T4Apply` | apply is deterministic on identical state and a no-op when repeated; drift stops it before any change and names the file; `--only` / `--except`; dependents warning; 0 model calls under a no-network sandbox and an HTTPS proxy trap, with positive controls |
 | T5 `T5Concurrent` | two rehearsals of one workspace at once stay separate; applying both stops the second on drift |
@@ -34,6 +34,7 @@ Logs, workspaces and the sink log of each run land in `<dirname of HERMES_TEST_H
 | `test_fork_*`, `test_cron_*`, `test_demo_*` | forks (isolation, comparison, apply one, cap, providers for bare model ids in a home with no default), cron mode, the demo end to end with its network checks |
 | `test_run_sh` | `tests/run.sh` adds the scripted provider inside an existing `providers:` block and installs the demo's data |
 | `test_sandbox_env` | a rehearsed `env` prints no variable of the process that runs Hermes (through `sandbox.run`, and through the middleware with Hermes' real terminal tool); `extra_env` still reaches the command |
+| `test_skill_usage` | a rehearsed `skill_view` is counted by Hermes as a normal read, and a count another writer makes while it runs survives |
 | `test_validate` | `hermes plugins validate` on a clean export of the tracked files passes: security scan safe, no rebinding of Hermes core |
 
 The live end-to-end run with a hosted model (it spends a few tenths of a cent) is separate:

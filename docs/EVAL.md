@@ -190,6 +190,9 @@ measurement (same capture and Apply code across its runs).
   Before: t11 2/2 flash runs, hermes_state_changed `["skills/.usage.json"]`.
   After: 0 skills/ changes in 72 runs; skill_view was called in 8 real-model runs (flash 6, pro 2). Probe q4: 3/3
   rehearsals left .usage.json unchanged while the 3 plugin-off runs raised view_count to 3.
+  Since withdrawn: the plugin no longer writes Hermes' usage store (putting counters back also undid what other
+  sessions counted meanwhile), so a rehearsed skill_view now bumps the counters as a normal read does and
+  probe q4 and t11 would show `skills/.usage.json` changed. These numbers are from before that change.
 - **F4 about 120 s stall on two file writes in one model turn.**
   Before: two write_file in one turn, ON 123.6 / 123.9 / 123.7 s vs OFF 5.6 / 4.7 / 4.5 s.
   After: two write_file in one turn ON 3.85 / 4.54 / 4.20 s (OFF 1.20 / 1.57 / 1.26 s); write_file + patch in

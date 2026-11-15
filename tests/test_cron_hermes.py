@@ -128,7 +128,9 @@ class TCron(unittest.TestCase):
         n = H.hermes(["cron", "notepad", jid, "set", "mood", "sunny-" + stamp], cwd=ws, label="cron_notepad")
         self.assertEqual(n.returncode, 0, n.stderr[-1000:])
         _gateway_stop("cron_gw_stop0")
-        cron_before, ws_before, skills_before = H.tree(_cron_dir()), H.tree(ws), H.tree(_skills_dir())
+        cron_before, ws_before = H.tree(_cron_dir()), H.tree(ws)
+        # Hermes counts the job's skill as used while the prompt is built (skills/.usage.json), as a real run does
+        skills_kept = H.tree(_skills_dir(), (H.USAGE_FILE,))
         jobs_before = _bytes(os.path.join(_cron_dir(), "jobs.json"))
         stub0 = len(_stub_rows())
         ids0 = H.rehearsal_ids()
@@ -143,7 +145,7 @@ class TCron(unittest.TestCase):
                          "jobs.json (next run, last run, counters) changed")
         self.assertEqual(H.tree(_cron_dir()), cron_before,
                          "the cron folder changed (job record, history, outputs, notepad or delivery audit)")
-        self.assertEqual(H.tree(_skills_dir()), skills_before, "loading the job's skill bumped Hermes' usage counters")
+        self.assertEqual(H.tree(_skills_dir(), (H.USAGE_FILE,)), skills_kept, "the cron rehearsal changed a skill")
 
         # one rehearsal per run, each with its own ledger holding the effects
         rids = _rids(p.stdout)
@@ -183,6 +185,7 @@ class TCron(unittest.TestCase):
 
         # control: Hermes' own cron path with the plugin off does it all for real
         stub1 = len(_stub_rows())
+        skills_before = H.tree(_skills_dir())  # the rehearsal's own reads counted already
         try:
             d = H.hermes(["plugins", "disable", names.PLUGIN_NAME], cwd=ws, label="cron_plugin_off")
             self.assertEqual(d.returncode, 0, d.stderr[-1000:])

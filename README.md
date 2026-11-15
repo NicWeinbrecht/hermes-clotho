@@ -72,7 +72,8 @@ The test suite drives Hermes' real agent loop with scripted tool calls (no model
 Its escape tests make one call per tool class (reads, file writes inside and outside the workspace, shell
 commands that write outside, hard-link out, run in the background or call `osascript`, `execute_code`, plugin
 sends, unknown tools, `web_extract`, memory, skills, subagents, symlink tricks, multi-file patches) and check
-that the workspace, a sentinel folder and Hermes' memory, skills and cron folders hash the same afterwards and
+that the workspace, a sentinel folder and Hermes' memory, skills and cron folders hash the same afterwards (the
+skills folder's `.usage.json` aside, where Hermes counts reads) and
 that the sink got nothing (`tests/test_rehearsal.py` `T2Escape`, `tests/test_capture_escape.py`). A fault
 injected into the plugin blocks every call (`T3FailClosed`). How to run it:
 `tests/README.md`.
@@ -80,7 +81,8 @@ injected into the plugin blocks every call (`T3FailClosed`). How to run it:
 ## What happens during a rehearsal
 
 Read-only tools run for real: file reads and searches, skills, session search, `web_search` (so a search
-reaches its provider and may be metered), clarify, todo. Page fetches (`web_extract`, `vision_analyze` and
+reaches its provider and may be metered), clarify, todo. A rehearsed `skill_view` bumps Hermes' skill usage
+counters (`skills/.usage.json`) as a normal read does. Page fetches (`web_extract`, `vision_analyze` and
 similar) are held, because a fetch can trigger a webhook. Everything else is held:
 
 - File writes land in a copy-on-write clone of your workspace. A write aimed through a symlink is resolved
@@ -307,7 +309,8 @@ hermes clotho cron daily-digest --runs 3    # three runs, one after another
 
 Each run is its own rehearsal, with its own id, ledger and report, so you can review and apply any one
 of them. The job itself is left alone: its schedule, next and last run, run history, output documents and
-notepad are not written, and a paused job stays paused (you can rehearse it before you resume it). The
+notepad are not written, and a paused job stays paused (you can rehearse it before you resume it). Hermes
+still counts the job's skills as used while it builds the prompt, as it does for a real run. The
 result is not delivered; the report says where it would have gone and shows the text.
 
 ```

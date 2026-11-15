@@ -253,10 +253,12 @@ class CapBackground(unittest.TestCase):
                         "Started it in the background.")
         ws = H.make_ws("cap_bg", {"a.txt": "a\n"})
         state_dirs = [os.path.join(H.HOME, d) for d in ("memories", "skills", "cron")]
-        before = {"ws": H.tree(ws), **{d: H.tree(d) for d in state_dirs}}
+        # skills/.usage.json is Hermes' read counter, which a rehearsed read bumps as a normal read does
+        skip = lambda d: (H.USAGE_FILE,) if os.path.basename(d) == "skills" else ()  # noqa: E731
+        before = {"ws": H.tree(ws), **{d: H.tree(d, skip(d)) for d in state_dirs}}
         p = H.rehearse(mark, ws, "cap_bg")
         time.sleep(3)  # a detached child would act after the parent returned
-        after = {"ws": H.tree(ws), **{d: H.tree(d) for d in state_dirs}}
+        after = {"ws": H.tree(ws), **{d: H.tree(d, skip(d)) for d in state_dirs}}
         rows = H.ledger(p.rid)
         calls = C.middleware_calls(p.rid)
         C.dump("bg", {"rid": p.rid, "rows": [(r["id"], r["class"], r["summary"], r["source"].get("task_id"))

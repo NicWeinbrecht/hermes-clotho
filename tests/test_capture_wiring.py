@@ -6,7 +6,8 @@ CapRefused      a write Hermes refuses (through a link to an outside file, no re
 CapHomeMirror   shell commands see HOME as a mirror: `mv x ~/.Trash/` works in the rehearsal and becomes an
                 OUTSIDE WORKSPACE row; a command that cannot be previewed puts the mirror back
 CapInlinePython python3 -I -c naming a network module is can't-preview, like execute_code
-CapBookkeeping  skill_view leaves skills/.usage.json unchanged; kanban_list (it promotes tasks) is held
+CapBookkeeping  skill_view runs for real and changes no skill (Hermes counts the read in skills/.usage.json);
+                kanban_list (it promotes tasks) is held
 CapLate         a sandbox report that arrives after its command returned becomes a BLOCKED row at the end
 CapProvider     the Claude-subscription provider runs only when its native tools are verified off
 CapCard         /clotho report <finished id> answers with the short card
@@ -197,17 +198,18 @@ class CapInlinePython(unittest.TestCase):
 
 
 class CapBookkeeping(unittest.TestCase):
-    def test_skill_view_leaves_the_home_unchanged(self):
+    def test_skill_view_runs_for_real_and_changes_no_skill(self):
+        """skill_view runs for real; Hermes counts it in skills/.usage.json as it counts any read, and the
+        plugin leaves that store alone. Nothing else under skills/ changes and the read is no effect."""
         skill = "clotho-test-skill"  # a skill of the test home's own (a fresh home has none)
         d = os.path.join(H.HOME, "skills", "testing", skill)
         if not os.path.exists(os.path.join(d, "SKILL.md")):
             os.makedirs(d, exist_ok=True)
             with open(os.path.join(d, "SKILL.md"), "w") as f:
                 f.write(f"---\nname: {skill}\ndescription: A skill the tests read.\n---\n\n# Test skill\n\nRead me.\n")
-        usage = os.path.join(H.HOME, "skills", ".usage.json")
-        read = lambda: H.read(usage) if os.path.exists(usage) else None  # noqa: E731
+        skills = os.path.join(H.HOME, "skills")
         ws = H.make_ws("cap_skill", {"a.txt": "a\n"})
-        u0 = read()
+        s0 = H.tree(skills, (H.USAGE_FILE,))
         mark = H.script("cap_skill", [[call("skill_view", name=skill)]])
         p = H.rehearse(mark, ws, "cap_skill")
         calls = H.lines(os.path.join(H.rdir(p.rid), "calls.jsonl"))
@@ -215,8 +217,8 @@ class CapBookkeeping(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stderr[-2000:])
         self.assertEqual([(c["tool"], c["decision"]) for c in calls if c["where"] == "middleware"],
                          [("skill_view", "run")])
-        self.assertEqual(read(), u0, "skill_view changed skills/.usage.json during the rehearsal")
-        self.assertTrue(any(c.get("where") == "bookkeeping" for c in calls), calls)
+        self.assertEqual(H.tree(skills, (H.USAGE_FILE,)), s0, "the rehearsed skill_view changed a skill")
+        self.assertFalse(any(c.get("where") == "bookkeeping" for c in calls), calls)
         self.assertEqual(H.ledger(p.rid), [])
 
     def test_kanban_list_is_held(self):

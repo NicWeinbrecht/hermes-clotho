@@ -425,7 +425,7 @@ def cron_toolsets(job: dict):
 
 def child_run(args) -> int:
     """One run of the job as a rehearsal, in this process (started by run_batch)."""
-    from . import capture, cli, sandbox
+    from . import cli, sandbox
     out_path = os.path.join(args.child, f"run-{args.index}.json")
     outcome = {"index": args.index, "rid": None, "status": "refused", "error": None}
 
@@ -491,8 +491,7 @@ def child_run(args) -> int:
         if prerun[0] and not _parse_wake_gate(prerun[1]):
             return stop("skipped", "the pre-run script returned wakeAgent=false: Hermes would not start the agent", 0)
     try:
-        with capture.usage_kept(r):  # loading the job's skills must not move Hermes' usage counters
-            prompt = build_prompt(job, prerun)
+        prompt = build_prompt(job, prerun)  # Hermes counts the job's skills as used, as a real run does
     except state.Refused as exc:
         return stop("refused", str(exc), 3)
     except Exception as exc:

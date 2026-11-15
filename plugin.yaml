@@ -8,7 +8,8 @@ description: >-
   Apply replays exactly the effects you kept, with no model calls.
   Disclosure — during a rehearsal, read-only tools run for real (file reads, file search, skills, session
   search, web_search, clarify, todo, delegate_task in `hermes clotho run`), so a web search reaches its
-  search provider for real and may be metered; page fetches (web_extract, vision_analyze and similar) are held.
+  search provider for real and may be metered, and a skill_view bumps Hermes' skill usage counters as a normal
+  read does; page fetches (web_extract, vision_analyze and similar) are held.
   Everything else is held: file writes go to an APFS copy-on-write clone of your workspace under
   <HERMES_HOME>/plugin-data/clotho/; a file-tool write aimed through a symlink is resolved first and recorded at
   the real target with a VIA SYMLINK badge, and a multi-file patch has each of its file headers mapped the same
@@ -39,7 +40,7 @@ description: >-
   without @provider is started with the provider Hermes would pick for it in your home, or OpenRouter when
   that one has no credentials there; the aliases flash, pro and kimi are OpenRouter models. Cron mode
   (`hermes clotho cron <job>`) runs a job's prompt as a one-shot rehearsal per run: the job's schedule,
-  history, outputs and notepad are not written and nothing is delivered; its pre-run script runs in the same
+  history, outputs and notepad are not written (Hermes still counts its skills as used) and nothing is delivered; its pre-run script runs in the same
   sandbox and a script that needs anything the sandbox stops is refused before the model is called. The demo
   (`hermes clotho demo`) replays model turns recorded on 2026-11-10 in a throwaway home with no keys:
   it makes no model call and opens no network connection (a guard in every process refuses anything but

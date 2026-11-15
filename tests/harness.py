@@ -187,8 +187,13 @@ def read(p: str) -> str:
         return f.read()
 
 
-def tree(p: str) -> str:
-    return snapshot.tree_hash(p)
+def tree(p: str, skip=()) -> str:
+    return snapshot.tree_hash(p, skip=skip)
+
+
+# A rehearsed skill_view is counted by Hermes like any read: it bumps <home>/skills/.usage.json. A hash of the
+# skills folder that must not change during a rehearsal leaves out exactly that one file (relative to skills/).
+USAGE_FILE = ".usage.json"
 
 
 # ---------------------------------------------------------------- running hermes

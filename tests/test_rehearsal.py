@@ -107,12 +107,14 @@ class T2Escape(unittest.TestCase):
         mark = H.script("t2", steps, "Everything done.")
         ws = H.make_ws("t2", {"README.txt": "readme\n", "keep/a.txt": "a\n"})
         hermes_state = [os.path.join(H.HOME, d) for d in ("memories", "skills", "cron")]
-        before = {"ws": H.tree(ws), "sentinel": H.tree(sent), **{p: H.tree(p) for p in hermes_state}}
+        # skills/.usage.json is Hermes' read counter, which a rehearsed read bumps as a normal read does
+        skip = lambda d: (H.USAGE_FILE,) if os.path.basename(d) == "skills" else ()  # noqa: E731
+        before = {"ws": H.tree(ws), "sentinel": H.tree(sent), **{p: H.tree(p, skip(p)) for p in hermes_state}}
 
         p = H.rehearse(mark, ws, "t2_escape")
         self.assertEqual(p.returncode, 0, p.stderr[-2000:])
         time.sleep(3)  # give a detached child time to try its late write
-        after = {"ws": H.tree(ws), "sentinel": H.tree(sent), **{q: H.tree(q) for q in hermes_state}}
+        after = {"ws": H.tree(ws), "sentinel": H.tree(sent), **{q: H.tree(q, skip(q)) for q in hermes_state}}
         self.assertEqual(after, before, "something outside the clone/overlay changed")
         self.assertEqual(H.sink_requests("/t2"), [], "a network request left during the rehearsal")
         self.assertEqual(H.sink_with("t2-send"), [], "a plugin tool ran during the rehearsal")
