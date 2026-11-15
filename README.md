@@ -88,6 +88,10 @@ similar) are held, because a fetch can trigger a webhook. Everything else is hel
 - File writes land in a copy-on-write clone of your workspace. A write aimed through a symlink is resolved
   first, the way the OS would resolve it, and recorded at the real target with a `VIA SYMLINK` badge that
   also names the path the agent used. A multi-file patch has every file header mapped the same way.
+- Files outside the workspace are not copied into the rehearsal. A read goes to the live file (Hermes' own
+  read deny-list applies). A write or patch works on a copy in a private temp folder that is removed when
+  the rehearsal ends; the rehearsal keeps only what changed, and the report makes the diff from the live
+  file. Apply rebuilds the change from the live file and checks it against the rehearsed content first.
 - Shell commands run inside that clone in a macOS sandbox with no network and no writes outside it, and with
   a short allowlist of environment variables (paths, user, shell, terminal, locale, `PYTHONPATH`,
   `HERMES_HOME`), so a rehearsed `env` shows none of the keys or settings Hermes runs with. Their

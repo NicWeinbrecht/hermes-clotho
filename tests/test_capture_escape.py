@@ -13,6 +13,7 @@ import unittest
 
 import harness as H
 import helpers_capture as C
+import snapshot
 from harness import call
 
 
@@ -31,7 +32,8 @@ def _files(rows):
 # ------------------------------------------------------------------------------------------- symlinks
 class CapSymlink(unittest.TestCase):
     """Hermes' writer follows symlinks (atomic_write: realpath of a final link; the OS follows linked parents).
-    A rehearsal must never let a rehearsed write land outside its clone or outside overlay."""
+    A rehearsal must never let a rehearsed write land outside its clone or outside overlay, and keeps no copy of an
+    outside file (the overlay is a temp folder removed when the rehearsal ends)."""
 
     def test_symlink_write_through(self):
         out = C.outside("symlink", {"target.txt": "sentinel\n", "deep/keep.txt": "keep\n"})
@@ -80,12 +82,12 @@ class CapSymlink(unittest.TestCase):
         self.assertIsNotNone(inner, "the write through a link back into the workspace is not in the ledger")
         self.assertTrue(inner["target"]["in_workspace"])
         self.assertEqual(inner["target"]["path"], os.path.join("sub", "inner_new.txt"))
-        # the would-be content sits in the rehearsal (overlay / clone), not on disk outside it
+        # the would-be content of an outside file is no copy in the rehearsal: the live file plus the row's delta
         rdir = H.rdir(p.rid)
-        with open(os.path.join(rdir, "outside", out.lstrip(os.sep), "target.txt")) as f:
-            self.assertEqual(f.read(), "overwritten via file link\n")
-        with open(os.path.join(rdir, "outside", out.lstrip(os.sep), "deep", "keep.txt")) as f:
-            self.assertEqual(f.read(), "PATCHED\n")
+        self.assertFalse(os.path.exists(os.path.join(rdir, "outside")), "a copy of outside files was kept")
+        for name, want in (("target.txt", "overwritten via file link\n"), ("deep/keep.txt", "PATCHED\n")):
+            with open(os.path.join(out, name), "rb") as f:
+                self.assertEqual(snapshot.rebuild(f.read(), by_abs[os.path.join(out, name)]["delta"]), want.encode())
         with open(os.path.join(rdir, "work", "sub", "inner_new.txt")) as f:
             self.assertEqual(f.read(), "lands in the real workspace?\n")
         # the agent was told the path it named, never a clone path

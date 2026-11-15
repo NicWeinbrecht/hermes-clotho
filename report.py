@@ -26,7 +26,7 @@ import shutil
 import sys
 import unicodedata
 
-from . import names, state
+from . import names, snapshot, state
 from .apply import dependencies, select
 from .ledger import counts, load
 
@@ -205,12 +205,46 @@ def load_rehearsal(rid: str):
     with open(os.path.join(rdir, "meta.json")) as f:
         meta = json.load(f)
     rows = load(os.path.join(rdir, "ledger.jsonl"))
+    outside_diffs(rows, rdir)
     applied_path = os.path.join(rdir, "applied.json")
     applied = {}
     if os.path.exists(applied_path):
         with open(applied_path) as f:
             applied = json.load(f)
     return meta, rows, applied
+
+
+_UNKNOWN = object()
+DIFF_GONE = ("the file has changed since the rehearsal (applied, or edited), so this diff, which is made from the "
+             "live file, cannot be shown; Apply checks the file again")
+
+
+def outside_diffs(rows, rdir) -> None:
+    """Fill in the diff of each change a file tool made to an existing file outside the workspace (rows marked
+    preview.diff_from_live). The rehearsal kept no copy of such a file, so its diff is made here, from the live
+    file and the row's delta, while the file is still in the state the change was made on."""
+    reached = {}  # path -> its would-be content after the rows so far (None = absent, _UNKNOWN = cannot tell)
+    for r in rows:
+        t = r.get("target") or {}
+        if r.get("class") != "file" or t.get("in_workspace") is not False or r.get("parent_id"):
+            continue
+        path = t.get("abs_path") or t.get("path")
+        base = reached[path] if path in reached else snapshot.read_bytes(path)
+        before = r.get("before") or {}
+        if base is _UNKNOWN or bool(before.get("exists")) != (base is not None) or (
+                base is not None and before.get("sha256") != hashlib.sha256(base).hexdigest()):
+            reached[path] = _UNKNOWN
+            if (r.get("preview") or {}).get("diff_from_live"):
+                r["preview"]["diff_note"] = DIFF_GONE
+            continue
+        after = None
+        if r.get("change") == "modified" and r.get("delta"):
+            after = snapshot.rebuild(base, r["delta"])
+        elif r.get("change") in ("created", "modified") and r.get("blob"):
+            after = snapshot.read_bytes(os.path.join(rdir, r["blob"]))
+        if (r.get("preview") or {}).get("diff_from_live"):
+            r["preview"]["diff"] = snapshot.unified_bytes(base, after, path)
+        reached[path] = after
 
 
 def _plural(n, one, many=None):
@@ -483,6 +517,8 @@ def _detail(ctx, r, pad):
             add(ln, *col, cut=True)
         if len(dl) - 2 > ctx.max_diff_lines:
             add(f"… {len(dl) - 2 - ctx.max_diff_lines} more diff lines (--json for all)", "dim")
+    elif cls == "file" and ctx.show_diffs and p.get("diff_note"):
+        add(p["diff_note"], "dim")
     elif cls == "http":
         req = p.get("request") or {}
         add(f"{req.get('method')} {req.get('url')}")

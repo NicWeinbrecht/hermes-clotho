@@ -120,7 +120,9 @@ Apply replays ticked effects with no model in the loop:
   entry=)` and `is_write_approval_required(path)` (agent/file_safety.py:315-336). A refused path stops the
   apply (exit 3) whatever `--force` says; if the module cannot be imported, every file effect is refused.
 - Effects outside the workspace are unticked by default and run only when named with `--only`.
-- File effects are written byte for byte from the rehearsal's blob store.
+- File effects are written byte for byte from the rehearsal's blob store. A change to an existing file outside the
+  workspace has no blob (the rehearsal keeps no copy of that file): Apply rebuilds it from the live file and the
+  row's delta, which checks the sha256 of both the live file and the result.
 - Messages, web requests and Hermes-state effects call the real tool implementation by name with the stored
   arguments: `model_tools.discover_builtin_tools()` then `model_tools.handle_function_call(name, args,
   task_id=…)` (signature model_tools.py:886-893). Hooks and middleware are not skipped, so other plugins'

@@ -11,7 +11,10 @@ description: >-
   search provider for real and may be metered, and a skill_view bumps Hermes' skill usage counters as a normal
   read does; page fetches (web_extract, vision_analyze and similar) are held.
   Everything else is held: file writes go to an APFS copy-on-write clone of your workspace under
-  <HERMES_HOME>/plugin-data/clotho/; a file-tool write aimed through a symlink is resolved first and recorded at
+  <HERMES_HOME>/plugin-data/clotho/; a file-tool write or patch to a file outside the workspace works on a copy
+  in a private temp folder that is removed when the rehearsal ends, and the rehearsal's folder keeps nothing of
+  that file but what changed (its diff is made from the live file when the report is shown); file reads
+  outside the workspace go to the live file; a file-tool write aimed through a symlink is resolved first and recorded at
   the real target with a VIA SYMLINK badge, and a multi-file patch has each of its file headers mapped the same
   way. Shell commands run inside that clone under macOS sandbox-exec with no network and no writes outside it,
   with a short allowlist of environment variables (paths, user, shell, terminal, locale, PYTHONPATH,
@@ -47,7 +50,8 @@ description: >-
   localhost, proxies point at a local trap), and it writes only inside its temp folder. On
   Linux and other systems, and if sandbox-exec is missing, shell commands are captured without preview;
   captured calls still fire other plugins' post_tool_call hooks with status ok. Reads outside the workspace
-  are allowed except a deny-list of credential stores (the SSH, GnuPG, AWS, Kubernetes and Docker folders in
+  are allowed except Hermes' own read deny-list for file reads, and, for shell commands, a deny-list of
+  credential stores (the SSH, GnuPG, AWS, Kubernetes and Docker folders in
   your home, the GitHub CLI login, .netrc, git credentials, the keychains, every .env file, and Hermes' own
   .env and auth.json); the effect report contains command output and file contents, so it can include
   whatever the rehearsed commands printed. Apply stops before any change when an effect would write a path

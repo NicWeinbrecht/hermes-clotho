@@ -42,6 +42,7 @@ def handle(raw_args: str = "", session_id: str = "", **kw) -> str:
             with live.lock:
                 live.closed = True
                 rows = finalize_ledger(live.ledger_path, live.reads)
+                live.drop_outside()
             state.disarm_session(live)
             live.write_meta(ended=state.now_iso(), status="finished", model_calls=live.model_calls,
                             tool_calls=live.tool_calls, counts=counts(rows), effects=len(rows))

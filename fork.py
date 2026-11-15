@@ -344,7 +344,12 @@ def cap_middleware(**kw):
                                  f"({type(exc).__name__}: {exc}); stopping this timeline.\n")
             sys.__stderr__.flush()
         finally:
-            os._exit(5)
+            try:
+                live = state.process_rehearsal()
+                if live is not None:
+                    live.drop_outside()  # os._exit skips atexit
+            finally:
+                os._exit(5)
 
 
 def arm_cap() -> None:

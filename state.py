@@ -5,22 +5,28 @@ Folder of one rehearsal (``<HERMES_HOME>/plugin-data/clotho/<id>/``):
     ledger.jsonl    one effect per line (LEDGER_SCHEMA, see docs/ledger.schema.json)
     base/           APFS clone of the workspace at the start (frozen pre-state)
     work/           APFS clone where file tools and shell commands act (would-be state)
-    outside/        copy-on-write overlay for file-tool writes outside the workspace
     snaps/<n>/      pre-state of shell command n (exact per-command diffs)
     home-overlay/   HOME for sandboxed commands: a mirror of the real home (writes there are OUTSIDE
                     WORKSPACE effects); file tools never use it (its folders link to the real home)
-    blobs/<sha256>  after-state content of every file effect (what Apply writes)
+    blobs/<sha256>  after-state content of every file effect (what Apply writes); for a file outside the workspace
+                    only content the agent wrote (a change to an existing outside file is a delta in its row)
     tmp/            private TMPDIR for sandboxed commands
     receipts/       one JSON receipt per apply
+Nothing of a file outside the workspace is copied into this folder. File tools that write or patch one work on
+a copy in the outside overlay: a private temp folder (mkdtemp, mode 0700) outside the Hermes home, made when
+the rehearsal starts and removed when it ends (``drop_outside``). Reads of outside files go to the live path.
 Several rehearsals of the same workspace can run at once, in one process or in several: each has its
 own folder and clones, and a folder is claimed with an exclusive mkdir, so two rehearsals never share one.
 """
 from __future__ import annotations
 
+import atexit
 import errno
 import json
 import os
 import secrets
+import shutil
+import tempfile
 import threading
 import time
 
@@ -208,7 +214,7 @@ class Rehearsal:
         self.dir = rehearsal_dir(rid)
         self.base = os.path.join(self.dir, "base")
         self.work = os.path.join(self.dir, "work")
-        self.outside = os.path.join(self.dir, "outside")
+        self.outside = os.path.join(os.path.realpath(tempfile.gettempdir()), f"{names.PLUGIN_NAME}-outside-{rid}")
         self.snaps = os.path.join(self.dir, "snaps")
         self.blobs = os.path.join(self.dir, "blobs")
         self.tmp = os.path.join(self.dir, "tmp")
@@ -240,8 +246,14 @@ class Rehearsal:
         if ws in ("/", os.path.realpath(os.path.expanduser("~"))):
             raise Refused(f"refusing to rehearse the whole {ws}; run from a project folder or pass --workspace")
         self._claim_dir()
-        for d in (self.outside, self.snaps, self.blobs, self.tmp):
+        for d in (self.snaps, self.blobs, self.tmp):
             os.makedirs(d, exist_ok=True)
+        tmp_root = os.path.realpath(tempfile.gettempdir())
+        if tmp_root == ws or tmp_root.startswith(ws + os.sep):  # never make the overlay inside the live workspace
+            tmp_root = "/tmp"
+        self.outside = os.path.realpath(tempfile.mkdtemp(prefix=f"{names.PLUGIN_NAME}-outside-{self.id}-",
+                                                         dir=tmp_root))
+        atexit.register(self.drop_outside)
         t = time.monotonic()
         m1 = snapshot.clonefile(ws, self.base)
         m2 = snapshot.clonefile(ws, self.work)
@@ -256,6 +268,12 @@ class Rehearsal:
         }
         self.write_meta()
         open(self.ledger_path, "a").close()
+
+    def drop_outside(self) -> None:
+        """Remove the outside overlay (copies of files outside the workspace the agent wrote or patched)."""
+        d = self.outside
+        if os.path.basename(d).startswith(f"{names.PLUGIN_NAME}-outside-{self.id}") and os.path.isdir(d):
+            shutil.rmtree(d, ignore_errors=True)
 
     def write_meta(self, **updates) -> None:
         with self.lock:

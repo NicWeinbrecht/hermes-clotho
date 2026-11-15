@@ -14,7 +14,8 @@
    pre-rehearsal state (or already in exactly the state this apply would leave, which makes a
    repeated apply a no-op). Anything else stops the apply and names the files.
 4. Replay: file effects write the rehearsed after-state content (byte for byte, from the blob
-   store); outbound and Hermes-state effects call the real tool implementation with the stored
+   store; a change to an existing file outside the workspace is rebuilt from the live file and the
+   row's delta, and must reach the rehearsed sha256 before it is written); outbound and Hermes-state effects call the real tool implementation with the stored
    arguments (other plugins' hooks and Hermes' own approval rules still apply); captured commands
    re-run for real only when named.
 5. Journal: ``applied.json`` is rewritten after every effect, and an outbound effect is marked
@@ -207,7 +208,10 @@ def _cwd(r, workspace=None):
 
 
 def _file_text(rdir, r):
-    """The would-be content of a created or modified file, as text (None for binary or no blob)."""
+    """The would-be content of a created or modified file, as text (None for binary or no blob); for a
+    change outside the workspace kept as a delta, the text it writes."""
+    if r.get("delta") and r.get("change") == "modified":
+        return snapshot.inserted_text(r["delta"])
     if not rdir or not r.get("blob") or r.get("change") not in ("created", "modified"):
         return None
     try:
@@ -505,6 +509,29 @@ def _write_blob(rdir, r, live):
     os.replace(tmp, live)
 
 
+def _write_delta(r, live):
+    """A change to an existing file outside the workspace: the live file (still in this effect's before-state)
+    plus the row's delta, written the way _write_blob writes. No copy of the file was kept by the rehearsal."""
+    _check_parent(live)
+    try:
+        with open(live, "rb") as f:
+            base = f.read()
+        new = snapshot.rebuild(base, r["delta"])
+    except (OSError, ValueError) as exc:
+        raise RuntimeError(f"{live}: {exc}; an earlier change to it may be unticked") from None
+    tmp = live + f".{names.PLUGIN_NAME}-apply-tmp"
+    if os.path.lexists(tmp):
+        os.unlink(tmp)
+    mode = (r.get("after") or {}).get("mode")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "wb") as f:
+        if mode:
+            os.fchmod(f.fileno(), int(mode, 8))
+        f.write(new)
+    _check_parent(live)
+    os.replace(tmp, live)
+
+
 def _is_dir_row(r) -> bool:
     return (r.get("target") or {}).get("kind") == "dir" or (
         not r.get("blob") and (r.get("after") or {}).get("kind") == "dir")
@@ -528,6 +555,8 @@ def _apply_file(rdir, r):
     ch = r["change"]
     if ch in ("created", "modified") and _is_dir_row(r):
         _make_dir(r, live)
+    elif ch == "modified" and r.get("delta"):
+        _write_delta(r, live)
     elif ch in ("created", "modified"):
         _write_blob(rdir, r, live)
     elif ch == "deleted":

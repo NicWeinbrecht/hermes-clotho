@@ -255,6 +255,7 @@ def finish(r: state.Rehearsal, rc, usage_path, seconds, agent_text="", error=Non
     with r.lock:
         r.closed = True  # stays armed: any late call (background jobs, review forks) is blocked
         rows = finalize_ledger(r.ledger_path, r.reads)
+        r.drop_outside()
     usage = {}
     try:
         usage = json.load(open(usage_path))

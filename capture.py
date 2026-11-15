@@ -1,9 +1,11 @@
 """Capture: the tool_execution middleware, the pre_tool_call backstop and the llm_execution counter.
 
 While a rehearsal is armed:
-  * read-only tools run for real, with workspace paths pointed at the work clone;
-  * write_file / patch run for real against the work clone (or the outside overlay) and become
-    file effects with a diff;
+  * read-only tools run for real, with workspace paths pointed at the work clone; reads of files outside the
+    workspace go to the live path (or to the overlay copy of one the rehearsal already changed);
+  * write_file / patch run for real against the work clone (or the outside overlay, a private temp folder
+    outside the Hermes home) and become file effects with a diff; nothing of a file outside the workspace is
+    kept in the rehearsal's folder (a change to one is kept as a delta, its diff is made from the live file);
   * terminal / execute_code run inside the work clone under the macOS sandbox; their file changes
     become file effects; a command that needs the network, writes outside the workspace or starts a
     background process becomes one captured effect instead ("can't preview");
@@ -197,7 +199,7 @@ def tool_execution(**kw):
         return _j({"error": f"{names.RESULT_TAG} {names.PRODUCT} hit an internal error ({type(exc).__name__}: "
                             f"{exc}); {tool} was NOT run. Nothing happened."})
     # read-only path: the real read runs outside the catch-all so its own errors stay tool errors
-    mapped, note = plan
+    mapped, outside_live = plan
     with r.lock:
         r.ran_for_real += 1
     held = getattr(_tls, "reading", None)
@@ -206,6 +208,8 @@ def tool_execution(**kw):
         res = _call_stamped(tool, kw, mapped, next_call)
     finally:
         _tls.reading = held
+    if outside_live and tool == "read_file" and not _tool_error(res):
+        _note_outside_read(r, outside_live, mapped, kw)
     try:
         return r.swap_out(res) if isinstance(res, str) else res
     except Exception:
@@ -281,23 +285,74 @@ def _abs_for(r: state.Rehearsal, path: str) -> str:
 
 
 def _plan_read(r, tool, a):
-    """Point read tools at the work clone (or the overlay) so they see the would-be state."""
+    """Point read tools at the work clone so they see the would-be state. ``(args, live outside path or None)``.
+    Outside the workspace a read goes to the live path, so Hermes' own read deny-list judges the real file and
+    nothing is copied; only a file the rehearsal already wrote or patched is read from its overlay copy, and then
+    only when Hermes would let the live file be read."""
+    outside_live = None
     if tool in classify.READ_PATH_TOOLS:
         raw = a.get("path") or "."
         ap = _abs_for(r, raw)
         try:
             live, _via = r.resolve_live(ap)
             cp, rel, inws = r.clone_path(live)
-            if tool == "read_file" and not inws and not os.path.lexists(cp) and os.path.isfile(live):
-                with r.lock:  # read and later write the same overlay copy (Hermes ties writes to reads by path)
-                    os.makedirs(os.path.dirname(cp), exist_ok=True)
-                    snapshot.clonefile(live, cp)
         except OSError:
             cp, rel, inws = r.to_clone(ap)
-        if inws or os.path.lexists(cp):
+            live = rel if not inws else None
+        if inws:
             a = {**a, "path": cp}
+        elif os.path.lexists(cp) and not _read_denied(live):
+            a = {**a, "path": cp}
+        else:
+            a = {**a, "path": live}
+            outside_live = live
         r.reads.append((r.call_seq, tool, f"{rel} {a.get('pattern') or ''}"))
-    return a, None
+    return a, outside_live
+
+
+def _read_denied(live) -> bool:
+    """Would Hermes refuse to read ``live``? Its public read guard (agent/file_safety.py get_read_block_error);
+    True when the guard cannot be loaded, so the read goes to the live path and Hermes decides there."""
+    try:
+        from agent.file_safety import get_read_block_error
+        return bool(get_read_block_error(live))
+    except Exception:
+        return True
+
+
+# Hermes ties a write to the reads before it by path (tools/file_tools_write_guards.py _stale_overwrite_blocker):
+# a whole-file write_file over a file this task has not read in full is refused. The agent reads an outside file
+# at its live path, but its write lands on the copy in the overlay. So the agent's successful reads of an outside
+# file are noted, and repeated on the copy through Hermes' own read_file when the copy is made, with the same task
+# and the same offset/limit: the guard then judges the rehearsed write as it would judge the live one.
+_READ_REPLAY_MAX = 50
+
+
+def _note_outside_read(r, live, mapped, kw):
+    with r.lock:
+        seen = getattr(r, "_outside_reads", None)
+        if seen is None:
+            seen = r._outside_reads = {}
+        reads = seen.setdefault(live, [])
+        if len(reads) < _READ_REPLAY_MAX:
+            reads.append((kw.get("task_id"), kw.get("session_id"),
+                          {k: v for k, v in mapped.items() if k in ("offset", "limit")}))
+
+
+def _replay_reads(r, live, cp):
+    for task_id, session_id, rargs in list((getattr(r, "_outside_reads", None) or {}).get(live, [])):
+        try:
+            _dispatch("read_file", {**rargs, "path": cp}, task_id=task_id, session_id=session_id)
+        except Exception as exc:
+            _trace(r, where="read-replay", path=live, error=f"{type(exc).__name__}: {exc}")
+
+
+def _dispatch(name, args, **kw):
+    """Hermes' registered handler for ``name``, with no hook or middleware in front (ctx.dispatch_tool)."""
+    if _CTX is not None and hasattr(_CTX, "dispatch_tool"):
+        return _CTX.dispatch_tool(name, args, **kw)
+    from tools.registry import registry
+    return registry.dispatch(name, args, **kw)
 
 
 # ---------------------------------------------------------------- file tools
@@ -313,7 +368,9 @@ def _target(r, ap, entry=False):
     if not inws and not os.path.lexists(cp):
         os.makedirs(os.path.dirname(cp), exist_ok=True)
         if os.path.lexists(live) and (entry or os.path.isfile(live)):
-            snapshot.clonefile(live, cp)
+            snapshot.clonefile(live, cp)  # into the overlay (a temp folder, removed when the rehearsal ends)
+            if not entry and os.path.isfile(cp) and not os.path.islink(cp):
+                _replay_reads(r, live, cp)
     if not r.contained(cp, entry=entry) or (not entry and os.path.islink(cp)):
         return f"{ap} resolves to {os.path.realpath(cp)}, outside the rehearsal's copy"
     return live, cp, rel, inws, via
@@ -323,7 +380,21 @@ def _original(r, live, rel, inws):
     return snapshot.fingerprint(os.path.join(r.base, rel)) if inws else snapshot.fingerprint(live)
 
 
-def _file_row(r, tool, a, kw, t, before, before_blob, after, after_blob, original, res, requested=None):
+def _snapshot_before(r, cp, inws):
+    """(before fingerprint, blob of the before-state, its bytes in memory). Outside the workspace nothing is stored:
+    the bytes stay in memory for the delta and the diff counts."""
+    if inws:
+        before, blob = r.store_blob(cp)
+        return before, blob, None
+    return snapshot.fingerprint(cp), None, snapshot.read_bytes(cp)
+
+
+def _snapshot_after(r, cp, inws):
+    return r.store_blob(cp) if inws else (snapshot.fingerprint(cp), None)
+
+
+def _file_row(r, tool, a, kw, t, before, before_blob, after, after_blob, original, res, requested=None,
+              before_bytes=None):
     live, cp, rel, inws, via = t
     if not after.get("exists"):
         change = "deleted"
@@ -332,21 +403,36 @@ def _file_row(r, tool, a, kw, t, before, before_blob, after, after_blob, origina
     else:
         change = "modified"
     label = rel if inws else live
-    diff = snapshot.unified_paths(os.path.join(r.dir, before_blob) if before_blob else None,
-                                  cp if change != "deleted" else None, label, label)
+    delta, method, stored_diff = None, "unlink" if change == "deleted" else "write_blob", None
+    if inws:
+        diff = stored_diff = snapshot.unified_paths(os.path.join(r.dir, before_blob) if before_blob else None,
+                                                    cp if change != "deleted" else None, label, label)
+    elif change == "created":  # every byte is the agent's: kept like a workspace file
+        _fp, after_blob = r.store_blob(cp)
+        diff = stored_diff = snapshot.unified_paths(None, cp, label, label)
+    else:  # an existing file outside the workspace: no copy of it is kept, only what changed
+        after_bytes = snapshot.read_bytes(cp) if change == "modified" else None
+        diff = snapshot.unified_bytes(before_bytes, after_bytes, label)
+        if change == "modified":
+            if before_bytes is None or after_bytes is None:
+                raise RuntimeError(f"{live}: the change outside the workspace is not a plain file edit")
+            delta, method = snapshot.make_delta(before_bytes, after_bytes), "write_delta"
     plus, minus = snapshot.diff_stats(diff)
     badges = ([] if inws else ["OUTSIDE WORKSPACE"]) + (["VIA SYMLINK"] if via else [])
     verb = {"created": "create", "modified": "modify", "deleted": "delete"}[change]
     target = {"kind": "file", "path": rel if inws else live, "abs_path": live, "in_workspace": inws}
     if via and requested:
         target["requested_path"] = requested
+    preview = {"diff": stored_diff, "lines_added": plus, "lines_removed": minus,
+               # outside: Hermes' own reply quotes the file (a patch's diff), so it is not kept
+               "result": (r.swap_out(res)[:400] if isinstance(res, str) and inws else None)}
+    if not inws and change != "created":
+        preview["diff_from_live"] = True  # the report makes the diff from the live file (report.outside_diffs)
     return _row(r, "file", tool, a, kw, change=change, target=target, default_selected=bool(inws),
                 summary=f"{verb} {label} (+{plus} -{minus})" + (f" (through a symlink: {requested})" if via and requested else ""),
                 before=before, original=original if _first_touch(r, rel if inws else live) else None,
-                after=after, blob=after_blob if change != "deleted" else None, badges=badges,
-                preview={"diff": diff, "lines_added": plus, "lines_removed": minus,
-                         "result": (r.swap_out(res)[:400] if isinstance(res, str) else None)},
-                apply={"method": "unlink" if change == "deleted" else "write_blob", "appliable": True, "reason": None})
+                after=after, blob=after_blob if change != "deleted" and not delta else None, delta=delta,
+                badges=badges, preview=preview, apply={"method": method, "appliable": True, "reason": None})
 
 
 def _file_effect(r, tool, a, kw, next_call):
@@ -369,10 +455,10 @@ def _file_effect(r, tool, a, kw, next_call):
                 return _cant_preview_tool(r, tool, a, kw, [f"another call of the same turn was still writing {raw}"])
             with r.lock:
                 original = _original(r, live, rel, inws)
-                before, before_blob = r.store_blob(cp)
+                before, before_blob, before_bytes = _snapshot_before(r, cp, inws)
             res = _call_stamped(tool, kw, {**a, "path": cp}, next_call)
             with r.lock:
-                after, after_blob = r.store_blob(cp)
+                after, after_blob = _snapshot_after(r, cp, inws)
                 if snapshot.same_state(before, after):
                     err = _tool_error(res)
                     # Refused by the tool itself (outside, through a link, or a guard such as "not read first"):
@@ -381,7 +467,7 @@ def _file_effect(r, tool, a, kw, next_call):
                         _write(r, _refused_row(r, tool, a, kw, [t + (raw,)], r.swap_out(err)))
                     return r.swap_out(res) if isinstance(res, str) else res
                 _write(r, _file_row(r, tool, a, kw, t, before, before_blob, after, after_blob, original, res,
-                                    requested=raw))
+                                    requested=raw, before_bytes=before_bytes))
     return r.swap_out(res) if isinstance(res, str) else res
 
 
@@ -407,6 +493,8 @@ def _refused_row(r, tool, a, kw, targets, err):
     effect, but an attempt a reviewer must see: the target the agent aimed at and the tool's message.
     ``targets``: (live, clone_path, rel, in_workspace, via_link, requested) or (None, None, raw, None, None, raw)."""
     r.blocked += 1
+    if any(t[3] is False for t in targets):  # Hermes' hint after a blank line quotes the file ("Did you mean")
+        err = str(err).split("\n\n", 1)[0]
     shown = []
     for live, _cp, rel, inws, via, req in targets:
         shown.append({"path": (rel if inws else live) if live else req, "abs_path": live, "in_workspace": inws,
@@ -503,10 +591,12 @@ def _v4a_apply(r, tool, a, kw, next_call, text, markers):
             kind, m = hit
             raws = [m.group(1).strip()] + ([m.group(2).strip()] if kind == "move" else [])
             mapped = []
-            for raw in raws:
+            for n, raw in enumerate(raws):
                 t = _target(r, _abs_for(r, raw), entry=kind in ("delete", "move"))
                 if isinstance(t, str):
                     return _cant_preview_tool(r, tool, a, kw, [t])
+                if kind == "move" and n == 0 and not t[3]:  # its content would land in the rehearsal's folder
+                    return _cant_preview_tool(r, tool, a, kw, [f"moves {raw}, a file outside the workspace"])
                 targets.setdefault(t[1], t + (raw,))
                 mapped.append(t[1])
             new = core[:m.start(1)] + mapped[0] + (core[m.end(1):m.start(2)] + mapped[1] if kind == "move" else "")
@@ -526,17 +616,17 @@ def _v4a_apply(r, tool, a, kw, next_call, text, markers):
         with r.lock:
             states = {}
             for cp, t in targets.items():
-                states[cp] = (_original(r, t[0], t[2], t[3]),) + r.store_blob(cp)
+                states[cp] = (_original(r, t[0], t[2], t[3]),) + _snapshot_before(r, cp, t[3])
         res = _call_stamped(tool, kw, call_args, next_call)
         with r.lock:
             rows = []
             for cp, t in targets.items():
-                original, before, before_blob = states[cp]
-                after, after_blob = r.store_blob(cp)
+                original, before, before_blob, before_bytes = states[cp]
+                after, after_blob = _snapshot_after(r, cp, t[3])
                 if snapshot.same_state(before, after):
                     continue
                 rows.append(_file_row(r, tool, a, kw, t[:5], before, before_blob, after, after_blob, original, res,
-                                      requested=t[5]))
+                                      requested=t[5], before_bytes=before_bytes))
             err = _tool_error(res)
             if not rows and err and any(not t[3] or t[4] for t in targets.values()):
                 # the tool refused a patch aimed outside the workspace or through a link: keep the attempt visible
@@ -982,7 +1072,10 @@ def llm_execution(**kw):
                     sys.__stderr__.write(f"{names.PRODUCT}: refusing to continue: {why}; a rehearsal cannot "
                                          "capture what it does.\n")
                     sys.__stderr__.flush()
-                    os._exit(4)
+                    try:
+                        r.drop_outside()  # os._exit skips atexit
+                    finally:
+                        os._exit(4)
     except Exception:
         pass
     resp = next_call(request)

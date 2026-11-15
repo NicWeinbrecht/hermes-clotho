@@ -56,16 +56,17 @@
     "original": {"$ref": "#/$defs/fingerprint_or_null", "description": "State of the live path when the rehearsal started. Set on the FIRST effect that touches the path; null on later ones. Apply's drift check compares the live file with it."},
     "original_from": {"$ref": "#/$defs/fingerprint_or_null", "description": "Renamed rows: original state of from_path (first touch only)."},
     "after": {"$ref": "#/$defs/fingerprint_or_null", "description": "State this effect leaves the path in."},
-    "blob": {"type": ["string", "null"], "description": "Path, relative to the rehearsal folder, of the after-state content Apply writes (blobs/<sha256>)."},
+    "blob": {"type": ["string", "null"], "description": "Path, relative to the rehearsal folder, of the after-state content Apply writes (blobs/<sha256>). Null for a change to an existing file outside the workspace: the rehearsal keeps no copy of such a file (see delta)."},
+    "delta": {"type": ["object", "null"], "description": "Optional (added in v1): a change a file tool made to an existing file outside the workspace, without the bytes the two versions share: base_sha256 (the before-state), sha256 (the after-state) and ops [[start, end, inserted]] (byte offsets into the before-state, inserted bytes in base64). Apply rebuilds the after-state from the live file (apply.method write_delta)."},
     "preview": {
       "type": "object",
-      "description": "What the report shows. file: diff (unified, null for binary or > 1 MB), lines_added, lines_removed, before_mode, after_mode; a file changed by a sandboxed command in the home mirror adds home_mirror (its path relative to the home). command: stdout, stderr, exit_code, sandbox{detection, log_reader, blocked_network, blocked_write, blocked_read, blocked_exec, blocked_ipc, survivors, swept[], timed_out, seconds, audit_events, maybe_blocked[], violations[]}, scan{flags[]}; can't-preview commands add reasons[] and partial_changes_discarded[]; execute_code rows add code (the full code, optional). http: request{method,url,headers,body}, sandbox, note. outbound/state/unknown: recipients[], text, args. blocked: error, traceback; a refused file-tool call adds refused_by ('tool') and targets[] {path, abs_path, in_workspace, requested_path, via_symlink}; a late sandbox report adds violation and command_row."
+      "description": "What the report shows. file: diff (unified, null for binary or > 1 MB), lines_added, lines_removed, before_mode, after_mode; a change to an existing file outside the workspace stores no diff and sets diff_from_live (added in v1): the report makes the diff from the live file, or sets diff_note when that file has changed since; a file changed by a sandboxed command in the home mirror adds home_mirror (its path relative to the home). command: stdout, stderr, exit_code, sandbox{detection, log_reader, blocked_network, blocked_write, blocked_read, blocked_exec, blocked_ipc, survivors, swept[], timed_out, seconds, audit_events, maybe_blocked[], violations[]}, scan{flags[]}; can't-preview commands add reasons[] and partial_changes_discarded[]; execute_code rows add code (the full code, optional). http: request{method,url,headers,body}, sandbox, note. outbound/state/unknown: recipients[], text, args. blocked: error, traceback; a refused file-tool call adds refused_by ('tool') and targets[] {path, abs_path, in_workspace, requested_path, via_symlink}; a late sandbox report adds violation and command_row."
     },
     "apply": {
       "type": "object",
       "required": ["method", "appliable"],
       "properties": {
-        "method": {"enum": ["write_blob", "unlink", "rename", "chmod", "group", "tool_call", "command", "none"]},
+        "method": {"enum": ["write_blob", "write_delta", "unlink", "rename", "chmod", "group", "tool_call", "command", "none"]},
         "appliable": {"type": "boolean"},
         "reason": {"type": ["string", "null"]}
       }

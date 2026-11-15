@@ -7,6 +7,7 @@ its own diff is exact). Effects are found by comparing stat manifests and confir
 """
 from __future__ import annotations
 
+import base64
 import ctypes
 import difflib
 import hashlib
@@ -137,6 +138,85 @@ def unified_paths(before_path, after_path, label_before, label_after):
     if a is None or b is None:
         return None
     return "".join(difflib.unified_diff(a, b, fromfile="a/" + label_before, tofile="b/" + label_after))
+
+
+def text_of(data):
+    """``data`` as lines of small UTF-8 text, or None (absent data is no lines)."""
+    if data is None:
+        return []
+    if len(data) > TEXT_LIMIT or b"\0" in data:
+        return None
+    try:
+        return data.decode("utf-8").splitlines(keepends=True)
+    except UnicodeDecodeError:
+        return None
+
+
+def unified_bytes(before, after, label):
+    """Unified diff of two contents held in memory (None = absent). None when either is not small UTF-8 text."""
+    a, b = text_of(before), text_of(after)
+    if a is None or b is None:
+        return None
+    return "".join(difflib.unified_diff(a, b, fromfile="a/" + label, tofile="b/" + label))
+
+
+def read_bytes(path):
+    """The content of a regular file, or None (absent, a folder, a link)."""
+    try:
+        if os.path.islink(path) or not os.path.isfile(path):
+            return None
+        with open(path, "rb") as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+# A delta records a change without the bytes the two versions share: for each changed range of ``before`` (byte
+# offsets), the bytes that replace it. Lines are matched first, then each changed block is trimmed to the bytes
+# that really differ, so an edit inside a long line keeps the rest of the line out of the delta too.
+def make_delta(before: bytes, after: bytes) -> dict:
+    a, b = before.splitlines(keepends=True), after.splitlines(keepends=True)
+    starts = [0]
+    for line in a:
+        starts.append(starts[-1] + len(line))
+    ops = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b).get_opcodes():
+        if tag == "equal":
+            continue
+        old, new = b"".join(a[i1:i2]), b"".join(b[j1:j2])
+        head = 0
+        while head < min(len(old), len(new)) and old[head] == new[head]:
+            head += 1
+        tail = 0
+        while tail < min(len(old), len(new)) - head and old[-1 - tail] == new[-1 - tail]:
+            tail += 1
+        ops.append([starts[i1] + head, starts[i2] - tail, base64.b64encode(new[head:len(new) - tail]).decode()])
+    delta = {"base_sha256": hashlib.sha256(before).hexdigest(), "sha256": hashlib.sha256(after).hexdigest(),
+             "ops": ops}
+    if rebuild(before, delta) != after:  # pragma: no cover - a bug here must never reach Apply
+        raise ValueError("the delta does not rebuild the after-state")
+    return delta
+
+
+def rebuild(base: bytes, delta: dict) -> bytes:
+    """``after`` from ``base`` and ``make_delta(base, after)``. ValueError when ``base`` is not the content the delta
+    was made from, or the result is not the content it was made to reach."""
+    if hashlib.sha256(base).hexdigest() != delta["base_sha256"]:
+        raise ValueError("the file is not in the state the change was made on")
+    out, pos = [], 0
+    for start, end, inserted in delta["ops"]:
+        out += [base[pos:start], base64.b64decode(inserted)]
+        pos = end
+    out.append(base[pos:])
+    after = b"".join(out)
+    if hashlib.sha256(after).hexdigest() != delta["sha256"]:
+        raise ValueError("the rebuilt content is not the rehearsed after-state")
+    return after
+
+
+def inserted_text(delta: dict) -> str:
+    """What a delta writes, as text (for the dependency guesses)."""
+    return "".join(base64.b64decode(x).decode("utf-8", "replace") for _s, _e, x in (delta or {}).get("ops", []))
 
 
 def diff_stats(diff):
