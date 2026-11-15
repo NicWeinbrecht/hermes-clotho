@@ -33,6 +33,7 @@ Logs, workspaces and the sink log of each run land in `<dirname of HERMES_TEST_H
 | `test_capture_*` | the tool_call bridge (rows under the real tool, `source.bridge` also when Hermes unwrapped the call), the same tool catalog as a plain `hermes -z`, parallel writes, refused writes inside and outside the workspace, the home mirror, bookkeeping reads, the clone path kept out of the agent's final text |
 | `test_fork_*`, `test_cron_*`, `test_demo_*` | forks (isolation, comparison, apply one, cap, providers for bare model ids in a home with no default), cron mode, the demo end to end with its network checks |
 | `test_run_sh` | `tests/run.sh` adds the scripted provider inside an existing `providers:` block and installs the demo's data |
+| `test_sandbox_env` | a rehearsed `env` prints no variable of the process that runs Hermes (through `sandbox.run`, and through the middleware with Hermes' real terminal tool); `extra_env` still reaches the command |
 | `test_validate` | `hermes plugins validate` on a clean export of the tracked files passes: security scan safe, no rebinding of Hermes core |
 
 The live end-to-end run with a hosted model (it spends a few tenths of a cent) is separate:

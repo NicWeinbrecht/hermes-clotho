@@ -1004,6 +1004,27 @@ def restore_home(res: dict) -> None:
         res["outside_changes"] = []
 
 
+# ---------------------------------------------------------------- environment
+# A rehearsed command's output goes back to the model, so it starts from an allowlist, never from this
+# process's environment: a rehearsed `env` must not print the keys and settings Hermes runs with. Kept: where
+# programs are and who runs them, the terminal and the locale, the Python path Hermes' own interpreter needs
+# (execute_code runs it), and the Hermes home a rehearsed `hermes` command should read. run() then sets HOME
+# (the mirror), TMPDIR, PWD and its own markers; extra_env is added last.
+ENV_KEEP = ("PATH", "HOME", "USER", "LOGNAME", "SHELL", "TERM", "LANG", "TZ", "PYTHONPATH", "HERMES_HOME")
+ENV_KEEP_PREFIXES = ("LC_",)
+DEFAULT_LANG = "en_US.UTF-8"
+
+
+def command_env(source=None) -> dict:
+    """The environment a sandboxed command starts from: the allowlisted names of ``source`` (default
+    os.environ) and a UTF-8 locale when none is set."""
+    src = os.environ if source is None else source
+    env = {k: v for k, v in src.items() if k in ENV_KEEP or k.startswith(ENV_KEEP_PREFIXES)}
+    if not any(k in env for k in ("LANG", "LC_ALL", "LC_CTYPE")):
+        env["LANG"] = DEFAULT_LANG
+    return env
+
+
 # ---------------------------------------------------------------- run
 def run(work, cwd, command, tmp, tag, timeout=60, orig=None, shell="/bin/bash", use_log=True, extra_env=None,
         home_overlay=None, real_home=None):
@@ -1040,7 +1061,7 @@ def run(work, cwd, command, tmp, tag, timeout=60, orig=None, shell="/bin/bash", 
     if os.path.exists(cwd_file):
         os.replace(cwd_file, cwd_file + ".prev")
     wrapped = f"trap 'builtin pwd -P > {shlex.quote(cwd_file)} 2>/dev/null' EXIT\n{command}"
-    env = {k: v for k, v in os.environ.items() if not k.startswith(("OPENROUTER", "ANTHROPIC", "OPENAI"))}
+    env = command_env()
     env.update(GIT_OPTIONAL_LOCKS="0", TMPDIR=tmp + "/", TMPPREFIX=os.path.join(tmp, "zsh"),
                PATH=bindir + ":" + env.get("PATH", "/usr/bin:/bin"), PWD=cwd,
                PYTHONDONTWRITEBYTECODE="1")

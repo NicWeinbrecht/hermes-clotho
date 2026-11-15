@@ -86,7 +86,9 @@ similar) are held, because a fetch can trigger a webhook. Everything else is hel
 - File writes land in a copy-on-write clone of your workspace. A write aimed through a symlink is resolved
   first, the way the OS would resolve it, and recorded at the real target with a `VIA SYMLINK` badge that
   also names the path the agent used. A multi-file patch has every file header mapped the same way.
-- Shell commands run inside that clone in a macOS sandbox with no network and no writes outside it. Their
+- Shell commands run inside that clone in a macOS sandbox with no network and no writes outside it, and with
+  a short allowlist of environment variables (paths, user, shell, terminal, locale, `PYTHONPATH`,
+  `HERMES_HOME`), so a rehearsed `env` shows none of the keys or settings Hermes runs with. Their
   `HOME` is a copy-on-write mirror of your home: a write there (say `mv old.zip ~/.Trash/`) stays in the mirror
   and shows up as an `OUTSIDE WORKSPACE` effect, ticked like any file effect, so Apply would make it in your
   real home. A write to an absolute path into your real home is blocked.

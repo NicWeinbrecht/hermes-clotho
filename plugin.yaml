@@ -12,7 +12,9 @@ description: >-
   Everything else is held: file writes go to an APFS copy-on-write clone of your workspace under
   <HERMES_HOME>/plugin-data/clotho/; a file-tool write aimed through a symlink is resolved first and recorded at
   the real target with a VIA SYMLINK badge, and a multi-file patch has each of its file headers mapped the same
-  way. Shell commands run inside that clone under macOS sandbox-exec with no network and no writes outside it;
+  way. Shell commands run inside that clone under macOS sandbox-exec with no network and no writes outside it,
+  with a short allowlist of environment variables (paths, user, shell, terminal, locale, PYTHONPATH,
+  HERMES_HOME), so a rehearsed `env` shows none of the keys or settings Hermes runs with;
   their HOME is a copy-on-write mirror of your home, so a write there (for example a move to ~/.Trash) stays in
   the mirror and is shown as an OUTSIDE WORKSPACE effect, ticked like other file effects, which Apply would
   make in your real home; a write to an absolute path into your real home is blocked.
