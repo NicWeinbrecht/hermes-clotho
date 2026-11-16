@@ -6,6 +6,8 @@ While a rehearsal is armed:
   * write_file / patch run for real against the work clone (or the outside overlay, a private temp folder
     outside the Hermes home) and become file effects with a diff; nothing of a file outside the workspace is
     kept in the rehearsal's folder (a change to one is kept as a delta, its diff is made from the live file);
+    a target whose real path Hermes' write guard refuses is never copied or run: a BLOCKED row, and the agent
+    gets Hermes' refusal;
   * terminal / execute_code run inside the work clone under the macOS sandbox; their file changes
     become file effects; a command that needs the network, writes outside the workspace or starts a
     background process becomes one captured effect instead ("can't preview");
@@ -320,6 +322,27 @@ def _read_denied(live) -> bool:
         return True
 
 
+def write_guard_error(live, verb="Write", entry=False):
+    """Hermes' own refusal to write ``live`` (a real, resolved path), or None: its public write guard, the check
+    its file tools make before they write (agent/file_safety.py get_write_denied_error, then
+    is_write_approval_required for ~/.ssh/config, which Hermes writes only after asking: a rehearsal does not ask,
+    and Apply cannot). ``entry``: a delete or move acts on the directory entry itself. Fail closed: when the guard
+    cannot be loaded or fails, the answer is a refusal."""
+    try:
+        from agent.file_safety import get_write_denied_error, is_write_approval_required
+    except Exception as exc:
+        return (f"{verb} denied: Hermes' write guard (agent.file_safety) cannot be loaded "
+                f"({type(exc).__name__}: {exc}), so '{live}' cannot be checked.")
+    try:
+        why = get_write_denied_error(live, verb=verb, entry=entry)
+        if not why and is_write_approval_required(live):
+            why = (f"{verb} denied: '{live}' needs Hermes' approval for each write, which a rehearsal does not "
+                   "ask for and Apply cannot.")
+    except Exception as exc:
+        why = f"{verb} denied: Hermes' write guard failed on '{live}' ({type(exc).__name__}: {exc})."
+    return why or None
+
+
 # Hermes ties a write to the reads before it by path (tools/file_tools_write_guards.py _stale_overwrite_blocker):
 # a whole-file write_file over a file this task has not read in full is refused. The agent reads an outside file
 # at its live path, but its write lands on the copy in the overlay. So the agent's successful reads of an outside
@@ -356,15 +379,28 @@ def _dispatch(name, args, **kw):
 
 
 # ---------------------------------------------------------------- file tools
-def _target(r, ap, entry=False):
+class _Denied:
+    """A file-tool target Hermes' write guard refuses: ``why`` is Hermes' message, ``target`` the target tuple
+    with no clone path (nothing was copied)."""
+
+    def __init__(self, why, target):
+        self.why, self.target = why, target
+
+
+def _target(r, ap, entry=False, verb="Write"):
     """Resolve a file-tool target the way the OS would in the would-be state, map it into the clone or the
-    overlay and prepare the overlay. Returns (live, clone_path, rel, in_workspace, via_link) or a reason
-    (str) why the target cannot be rehearsed safely."""
+    overlay and prepare the overlay. Returns (live, clone_path, rel, in_workspace, via_link), a ``_Denied``
+    when Hermes' write guard refuses the real path (checked before anything is copied, inside the workspace
+    too: HERMES_WRITE_SAFE_ROOT and the runtime's own files can deny a workspace path), or a reason (str) why
+    the target cannot be rehearsed safely."""
     try:
         live, via = r.resolve_live(ap, follow_last=not entry)
     except OSError as exc:
         return f"cannot resolve {ap} ({exc.strerror or exc})"
     cp, rel, inws = r.clone_path(live)
+    why = write_guard_error(live, verb=verb, entry=entry)
+    if why:
+        return _Denied(why, (live, None, rel, inws, via))
     if not inws and not os.path.lexists(cp):
         os.makedirs(os.path.dirname(cp), exist_ok=True)
         if os.path.lexists(live) and (entry or os.path.isfile(live)):
@@ -447,6 +483,8 @@ def _file_effect(r, tool, a, kw, next_call):
     with r.fs_gate.shared():
         with r.lock:
             t = _target(r, ap)
+            if isinstance(t, _Denied):
+                return _deny(r, tool, a, kw, t, raw)
             if isinstance(t, str):
                 return _cant_preview_tool(r, tool, a, kw, [t])
         live, cp, rel, inws, via = t
@@ -488,10 +526,26 @@ def _tool_error(res):
     return None
 
 
-def _refused_row(r, tool, a, kw, targets, err):
+def _deny(r, tool, a, kw, d, raw):
+    """A file-tool call aimed at a path Hermes' write guard refuses: nothing is copied or run, a BLOCKED row
+    keeps the attempt, and the agent gets Hermes' own refusal, the error its file tool returns for that path."""
+    _write(r, _refused_row(r, tool, a, kw, [d.target + (raw,)], d.why, by="write_guard"))
+    return _j({"error": d.why})
+
+
+_REFUSED_BY = {
+    "tool": ("refused by Hermes", "the tool refused it during the rehearsal; nothing would be written"),
+    "write_guard": ("refused by Hermes' write guard",
+                    "Hermes' write guard refuses this path; nothing was copied or written, and Apply never writes it"),
+}
+
+
+def _refused_row(r, tool, a, kw, targets, err, by="tool"):
     """A file-tool call the tool refused (nothing was written, in the rehearsal or for real). Not an
     effect, but an attempt a reviewer must see: the target the agent aimed at and the tool's message.
-    ``targets``: (live, clone_path, rel, in_workspace, via_link, requested) or (None, None, raw, None, None, raw)."""
+    ``targets``: (live, clone_path, rel, in_workspace, via_link, requested) or (None, None, raw, None, None, raw).
+    ``by``: "tool" (Hermes' tool answered with the refusal) or "write_guard" (stopped before the tool ran)."""
+    said, reason = _REFUSED_BY[by]
     r.blocked += 1
     if any(t[3] is False for t in targets):  # Hermes' hint after a blank line quotes the file ("Did you mean")
         err = str(err).split("\n\n", 1)[0]
@@ -509,11 +563,10 @@ def _refused_row(r, tool, a, kw, targets, err):
         target["abs_path"] = first["abs_path"]
     if first.get("requested_path") and first["requested_path"] != first["path"]:
         target["requested_path"] = first["requested_path"]
-    return _row(r, "blocked", tool, a, kw, summary=f"{tool} refused by Hermes: {what} - {_short(err, 90)}",
+    return _row(r, "blocked", tool, a, kw, summary=f"{tool} {said}: {what} - {_short(err, 90)}",
                 target=target, previewable=False, default_selected=False, badges=badges,
-                preview={"error": err, "refused_by": "tool", "targets": shown},
-                apply={"method": "none", "appliable": False,
-                       "reason": "the tool refused it during the rehearsal; nothing would be written"})
+                preview={"error": err, "refused_by": by, "targets": shown},
+                apply={"method": "none", "appliable": False, "reason": reason})
 
 
 # V4A patches (patch mode="patch") name their targets in header lines; Hermes resolves them against the task's
@@ -592,7 +645,11 @@ def _v4a_apply(r, tool, a, kw, next_call, text, markers):
             raws = [m.group(1).strip()] + ([m.group(2).strip()] if kind == "move" else [])
             mapped = []
             for n, raw in enumerate(raws):
-                t = _target(r, _abs_for(r, raw), entry=kind in ("delete", "move"))
+                # Hermes vets a delete or a move (both ends) as an entry (tools/file_operations.py delete_file, move_file)
+                t = _target(r, _abs_for(r, raw), entry=kind in ("delete", "move"),
+                            verb={"delete": "Delete", "move": "Move"}.get(kind, "Write"))
+                if isinstance(t, _Denied):
+                    return _deny(r, tool, a, kw, t, raw)
                 if isinstance(t, str):
                     return _cant_preview_tool(r, tool, a, kw, [t])
                 if kind == "move" and n == 0 and not t[3]:  # its content would land in the rehearsal's folder
@@ -606,6 +663,8 @@ def _v4a_apply(r, tool, a, kw, next_call, text, markers):
         call_args = {**a, "patch": "\n".join(out_lines)}
         if isinstance(a.get("path"), str) and a["path"]:
             t = _target(r, _abs_for(r, a["path"]))
+            if isinstance(t, _Denied):
+                return _deny(r, tool, a, kw, t, a["path"])
             if isinstance(t, str):
                 return _cant_preview_tool(r, tool, a, kw, [t])
             call_args["path"] = t[1]
@@ -867,10 +926,52 @@ def _shell_effect(r, tool, a, kw):
                                           "workspace; naming the command applies all the changes listed under it")
             for row in rows:
                 row["default_selected"] = False
+        _guard_command_rows(r, cmd_row, rows)
         _write(r, cmd_row)
         for row in rows:
             _write(r, row)
         return _shell_result(tool, out, res["exit_code"])
+
+
+def _row_write_paths(r, row):
+    """(real path, verb, entry) for every path a command's file change writes: its target and, for a move, its
+    source (the way apply.write_denials checks them)."""
+    t = row["target"]
+    ch = row.get("change")
+    verb = {"deleted": "Delete", "renamed": "Move"}.get(ch, "Write")
+    out = [(t["abs_path"], verb, ch == "deleted")]
+    if ch == "renamed" and row.get("from_path"):
+        src = row["from_path"]
+        out.append((src if os.path.isabs(src) else os.path.join(r.workspace, src), verb, True))
+    return out
+
+
+def _guard_command_rows(r, cmd_row, rows):
+    """A command's file changes go through Hermes' write guard as they are recorded. A refused change is marked
+    BLOCKED, and the whole command with every change under it becomes not appliable: its changes apply as one
+    unit, so the rest must not land without it (a move must never land as its delete alone)."""
+    refused = {}
+    for row in rows:
+        for path, verb, entry in _row_write_paths(r, row):
+            why = write_guard_error(path, verb=verb, entry=entry)
+            if why:
+                refused.setdefault(row["id"], why)
+    if not refused:
+        return
+    r.blocked += len(refused)
+    first = min(refused)
+    unit = (f"not applied: its changes apply as one unit and Hermes' write guard refuses change #{first} "
+            f"({refused[first]})")
+    for row in [cmd_row] + rows:
+        why = refused.get(row["id"])
+        row["default_selected"] = False
+        row["apply"] = {"method": "none", "appliable": False, "reason": why or unit}
+        if why:
+            row["badges"] = ["BLOCKED"] + [b for b in row.get("badges") or [] if b != "BLOCKED"]
+            row["preview"]["error"] = why
+            row["preview"]["refused_by"] = "write_guard"
+    cmd_row["badges"] = list(cmd_row.get("badges") or []) + ["BLOCKED"]
+    cmd_row["summary"] += f" - blocked: Hermes' write guard refuses {len(refused)} of its changes"
 
 
 READ_HEADS = {"cat", "head", "tail", "grep", "egrep", "rg", "wc", "less", "more", "sed", "awk", "jq", "diff",

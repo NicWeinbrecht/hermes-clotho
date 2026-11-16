@@ -92,12 +92,22 @@ similar) are held, because a fetch can trigger a webhook. Everything else is hel
   read deny-list applies). A write or patch works on a copy in a private temp folder that is removed when
   the rehearsal ends; the rehearsal keeps only what changed, and the report makes the diff from the live
   file. Apply rebuilds the change from the live file and checks it against the rehearsed content first.
+- A write, patch, delete or move aimed at a path Hermes' own write guard refuses (`agent/file_safety.py`:
+  `~/.ssh/authorized_keys` and the SSH keys, `.netrc`, `.pgpass`, `.npmrc`, `.pypirc`, git credentials, the
+  credential folders, Hermes' `.env` and secret stores, anything outside `HERMES_WRITE_SAFE_ROOT`, and
+  `~/.ssh/config`, which Hermes writes only after asking) is refused during the rehearsal too, inside the
+  workspace or outside it. The real path is checked before anything is copied: no copy of the file is made,
+  the tool does not run, the agent gets Hermes' own refusal, and the report shows a `BLOCKED` row that cannot
+  be applied.
 - Shell commands run inside that clone in a macOS sandbox with no network and no writes outside it, and with
   a short allowlist of environment variables (paths, user, shell, terminal, locale, `PYTHONPATH`,
   `HERMES_HOME`), so a rehearsed `env` shows none of the keys or settings Hermes runs with. Their
   `HOME` is a copy-on-write mirror of your home: a write there (say `mv old.zip ~/.Trash/`) stays in the mirror
   and shows up as an `OUTSIDE WORKSPACE` effect, unticked: Apply makes it in your real home only when you name
-  it, or the command that made it, with `--only`. A write to an absolute path into your real home is blocked.
+  it, or the command that made it, with `--only`. A write to an absolute path into your real home is blocked,
+  and so is a write to a credential file the mirror links instead of copying (the ones Hermes' write guard
+  refuses, such as `~/.npmrc`). A command whose file changes include a path the guard refuses is `BLOCKED`
+  and cannot be applied, with all its changes.
   When a command returns, its process group is killed, and so is a child that started its own session
   (the Disclosure names the one case this misses).
 - `execute_code` runs in the same sandbox. Every call gets a row with its code; code that names a network

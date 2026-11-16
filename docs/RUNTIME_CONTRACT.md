@@ -38,6 +38,20 @@ What Hermes guarantees, from the source and checked by running it:
   single-use (hermes_cli/middleware.py:180-190); not calling it means the real tool never runs. Passing changed
   arguments to `next_call` sends them downstream; this is how file tools are pointed at the rehearsal's work
   clone.
+- **Hermes' write guard sees the clone path, not the real one.** Hermes' file tools vet the path they are
+  handed (`get_write_denied_error` in tools/file_operations.py write_file, patch_replace, delete_file,
+  move_file; `is_write_approval_required` in tools/file_tools_write_guards.py), so a clone or overlay path
+  passes where the real path would be refused. Capture therefore runs every file-tool target's real resolved
+  path (and both ends of a move; a delete or move as an entry) through the same two public functions in
+  agent/file_safety.py before it copies or redirects anything (`capture._target`, `capture.write_guard_error`),
+  inside the workspace too (`HERMES_WRITE_SAFE_ROOT`, the runtime's own files). A refused target is never
+  copied and the tool never runs: the row is `BLOCKED` (`preview.refused_by: "write_guard"`), unticked and not
+  appliable, and the agent gets `{"error": <Hermes' message>}`, the error Hermes' tool returns for that path;
+  `~/.ssh/config`, which Hermes writes only after asking, is refused the same way, since a rehearsal does not
+  ask. If the module cannot be imported, every file-tool write is refused. A sandboxed command's file changes
+  go through the same check as they are recorded; a refused change makes the whole command `BLOCKED` and not
+  appliable, and the home mirror links, never copies, a top-level file the guard refuses. Apply checks again
+  (section 5).
 - **Order.** The chain runs in registration order; plugin load order is topological on `requires_plugins`, then
   alphabetical. A middleware registered earlier could run a tool before Clotho sees it, so Clotho checks the
   chain before it arms (section 4).
@@ -53,7 +67,8 @@ What happens around a captured (short-circuited) call in the agent loop:
 - The activity feed shows the arguments as rewritten (the work-clone path), while the transcript keeps the
   model's own; Clotho maps paths back in the results it returns.
 - A captured result never carries an `error` key for `write_file` / `patch`: an error result there adds Hermes'
-  "File-mutation verifier: … FAILED this turn" footer (agent/turn_explainers.py:116-160).
+  "File-mutation verifier: … FAILED this turn" footer (agent/turn_explainers.py:116-160). A write refused by
+  Hermes' write guard is not captured: it carries Hermes' own error, as the live call would.
 
 On the direct `handle_function_call` path the order is `tool_request` middleware, then `pre_tool_call`, then
 `tool_execution` middleware (model_tools.py:946-970), and `session_id` may be empty there, so rehearsal state is
@@ -118,7 +133,9 @@ Apply replays ticked effects with no model in the loop:
 - Before any change, every selected file effect's real path (and a move's source) goes through Hermes' own write
   guard, the public functions its file tools call: `agent.file_safety.get_write_denied_error(path, verb=,
   entry=)` and `is_write_approval_required(path)` (agent/file_safety.py:315-336). A refused path stops the
-  apply (exit 3) whatever `--force` says; if the module cannot be imported, every file effect is refused.
+  apply (exit 3) whatever `--force` says; if the module cannot be imported, every file effect is refused. This
+  is the second line: capture already refuses such a target during the rehearsal (section 2), so it reaches
+  Apply only from a ledger written before that check, or when the guard's answer changed since.
 - Effects outside the workspace are unticked by default and run only when named with `--only`.
 - File effects are written byte for byte from the rehearsal's blob store. A change to an existing file outside the
   workspace has no blob (the rehearsal keeps no copy of that file): Apply rebuilds it from the live file and the

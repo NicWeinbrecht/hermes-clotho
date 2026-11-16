@@ -938,6 +938,17 @@ _SECRET_NAMES = {".ssh", ".gnupg", ".aws", ".docker", ".kube", ".netrc", ".git-c
 _CLONE_MAX = 64 << 20
 
 
+def _write_denied(path: str) -> bool:
+    """Would Hermes' write guard refuse ``path`` (agent/file_safety.py: .pgpass, .npmrc, .pypirc and the other
+    credential files)? Such a file is linked into the mirror, never copied, so no copy of it is kept and a write
+    to it stays blocked. True when the guard cannot be loaded (fail closed)."""
+    try:
+        from agent.file_safety import get_write_denied_error, is_write_approval_required
+        return bool(get_write_denied_error(path) or is_write_approval_required(path))
+    except Exception:
+        return True
+
+
 def _home_mirror(overlay: str, real_home: str) -> str:
     """overlay/home: HOME for sandboxed commands. Built once per rehearsal."""
     root = os.path.join(overlay, "home")
@@ -958,7 +969,7 @@ def _home_mirror(overlay: str, real_home: str) -> str:
             if name == ".Trash":
                 os.mkdir(dst)  # a Trash of its own: moves into it are kept and reported
             elif (stat.S_ISREG(st.st_mode) and st.st_size <= _CLONE_MAX and name not in _SECRET_NAMES
-                  and not (name == ".env" or name.startswith(".env."))):
+                  and not (name == ".env" or name.startswith(".env.")) and not _write_denied(src)):
                 snapshot.clonefile(src, dst)
             else:
                 os.symlink(src, dst)  # folders and secrets: reads go to the real path, writes stay blocked

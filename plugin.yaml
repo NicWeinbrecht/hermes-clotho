@@ -16,12 +16,18 @@ description: >-
   that file but what changed (its diff is made from the live file when the report is shown); file reads
   outside the workspace go to the live file; a file-tool write aimed through a symlink is resolved first and recorded at
   the real target with a VIA SYMLINK badge, and a multi-file patch has each of its file headers mapped the same
-  way. Shell commands run inside that clone under macOS sandbox-exec with no network and no writes outside it,
+  way; a file-tool write, patch, delete or move aimed at a path Hermes' own write guard refuses (the paths
+  listed for Apply below, and anything outside HERMES_WRITE_SAFE_ROOT), inside the workspace or outside it, is
+  refused during the rehearsal: its real path is checked before anything is copied, nothing of the file is
+  copied, the tool does not run, the agent gets Hermes' refusal, and the report shows a BLOCKED row that cannot
+  be applied. Shell commands run inside that clone under macOS sandbox-exec with no network and no writes outside it,
   with a short allowlist of environment variables (paths, user, shell, terminal, locale, PYTHONPATH,
   HERMES_HOME), so a rehearsed `env` shows none of the keys or settings Hermes runs with;
   their HOME is a copy-on-write mirror of your home, so a write there (for example a move to ~/.Trash) stays in
   the mirror and is shown as an OUTSIDE WORKSPACE effect, unticked, which Apply makes in your real home only
-  when you name it (or its command) with --only; a write to an absolute path into your real home is blocked.
+  when you name it (or its command) with --only; a write to an absolute path into your real home is blocked, and
+  so is a write to a credential file Hermes' write guard refuses (the mirror links such a file, never copies
+  it); a command whose file changes include such a path is BLOCKED and cannot be applied.
   Messages, web requests, MCP and other plugins' tools, cron changes and memory writes are captured, never run.
   Every effect in the report is ticked by default, messages and web requests included, except four kinds that
   run only if you name them with --only: tools Clotho does not know, held fetches, commands it cannot
